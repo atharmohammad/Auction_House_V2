@@ -1,0 +1,26 @@
+[package]
+name = "auction-house-v2"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "auction_house_v2"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.28.0"
+mpl-token-metadata="3.2.3"
+mpl-bubblegum="1.0.0"
+winnow="=0.4.1"
+anchor-spl = "0.28.0"
+strum = "0.24"
+strum_macros = "0.24"
+mpl-utils = { version = "0.3.1" }
