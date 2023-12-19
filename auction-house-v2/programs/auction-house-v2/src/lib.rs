@@ -1,15 +1,15 @@
-use anchor_lang::prelude::*;
-
 declare_id!("AHV2WqTNWDjBqY2zv9eUAMHneicckWf5NZxnPJvYxrkA");
 
+use anchor_lang::prelude::*;
+mod constants;
+mod instructions;
+mod state;
+pub use instructions::*;
 #[program]
 pub mod auction_house_v2 {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Ok(())
+    pub fn sell(ctx: Context<SellInstruction>) -> Result<()> {
+        ctx.accounts.sell()
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}
