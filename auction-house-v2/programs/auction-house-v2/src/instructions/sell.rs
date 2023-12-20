@@ -10,8 +10,12 @@ use anchor_lang::{
 
 #[derive(Accounts)]
 pub struct SellInstruction<'info> {
-    #[account(seeds=[PREFIX.as_ref(),auction_house.creator.key().as_ref(),auction_house.treasury_mint.key().as_ref()],bump)]
+    #[account(seeds=[PREFIX.as_ref(),creator.key().as_ref(),treasury_mint.key().as_ref()],bump)]
     auction_house: Account<'info, AuctionHouseV2Data>,
+
+    treasury_mint: UncheckedAccount<'info>,
+
+    creator: UncheckedAccount<'info>,
 
     owner: Signer<'info>,
 
@@ -19,7 +23,7 @@ pub struct SellInstruction<'info> {
         seeds=[
             PREFIX.as_ref(),
             owner.key().as_ref(),
-            auction_house.key().as_ref(), 
+            auction_house.key().as_ref(),
             asset_id.key().as_ref(),
             auction_house.treasury_mint.as_ref(),
             &u64::MAX.to_le_bytes()
@@ -30,7 +34,7 @@ pub struct SellInstruction<'info> {
 
     asset_id: UncheckedAccount<'info>,
 
-    #[account(seeds=[auction_house.key().as_ref(),FEE.as_bytes()],bump)]
+    #[account(seeds=[FEE.as_bytes(),auction_house.key().as_ref()],bump)]
     auction_house_fee_account: UncheckedAccount<'info>,
 
     #[account(seeds=[PROGRAM.as_bytes(), SIGNER.as_bytes()], bump)]
@@ -42,8 +46,8 @@ pub struct SellInstruction<'info> {
     // Cnft proofs in the remaining accounts
 }
 
-impl <'info> SellInstruction<'info> {
-    pub fn sell(&mut self)->Result<()>{
+impl<'info> SellInstruction<'info> {
+    pub fn sell(&mut self) -> Result<()> {
         Ok(())
     }
 }
