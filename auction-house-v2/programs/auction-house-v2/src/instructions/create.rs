@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct CreateInstruction<'info> {
-    #[account(init,payer=payer,seeds=[PREFIX.as_ref(),authority.key().as_ref(),treasury_mint.key().as_ref()],bump,space=CreateInstruction::MAX_SIZE)]
+    #[account(init,payer=payer,seeds=[AUCTION_HOUSE.as_ref(),authority.key().as_ref(),treasury_mint.key().as_ref()],bump,space=CreateInstruction::MAX_SIZE)]
     auction_house: Account<'info, AuctionHouseV2Data>,
 
     authority: UncheckedAccount<'info>,

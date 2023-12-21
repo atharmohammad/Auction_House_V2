@@ -1,4 +1,4 @@
-use crate::constants::{FEE, PREFIX, PROGRAM, SIGNER};
+use crate::constants::*;
 use crate::state::AuctionHouseV2Data;
 use anchor_lang::prelude::*;
 use anchor_lang::{
@@ -10,7 +10,7 @@ use anchor_lang::{
 
 #[derive(Accounts)]
 pub struct SellInstruction<'info> {
-    #[account(seeds=[PREFIX.as_ref(),creator.key().as_ref(),treasury_mint.key().as_ref()],bump)]
+    #[account(seeds=[AUCTION_HOUSE.as_ref(),creator.key().as_ref(),treasury_mint.key().as_ref()],bump)]
     auction_house: Account<'info, AuctionHouseV2Data>,
 
     treasury_mint: UncheckedAccount<'info>,
@@ -21,7 +21,7 @@ pub struct SellInstruction<'info> {
 
     #[account(
         seeds=[
-            PREFIX.as_ref(),
+            TRADE_STATE.as_ref(),
             owner.key().as_ref(),
             auction_house.key().as_ref(),
             asset_id.key().as_ref(),
