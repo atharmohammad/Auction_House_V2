@@ -20,9 +20,9 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct AuctionHouseV2Data {
     pub authority: Pubkey,
-    pub creator: Pubkey,
     pub treasury_mint: Pubkey,
     pub seller_fee_basis_points: u64,
+    pub requires_sign_off: bool,
     pub treasury_account: Pubkey,
     pub treasury_withdrawal_account: Pubkey,
     pub fee_account: Pubkey,
