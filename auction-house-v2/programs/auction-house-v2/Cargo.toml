@@ -17,6 +17,7 @@ default = []
 
 [dependencies]
 anchor-lang = "0.28.0"
+borsh = ">= 0.9"
 mpl-token-metadata="3.2.3"
 mpl-bubblegum="1.0.0"
 winnow="=0.4.1"

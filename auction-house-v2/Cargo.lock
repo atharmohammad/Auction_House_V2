@@ -392,6 +392,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "borsh 0.9.3",
  "mpl-bubblegum",
  "mpl-token-metadata",
  "mpl-utils",

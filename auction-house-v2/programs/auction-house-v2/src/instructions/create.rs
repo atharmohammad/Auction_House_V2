@@ -32,7 +32,7 @@ impl<'info> CreateInstruction<'info> {
     pub const MAX_SIZE: usize = 32 * 7 + 8 + 1 * 3 + 8;
     pub fn create(
         ctx: Context<CreateInstruction>,
-        seller_fee_basis_points: u64,
+        seller_fee_basis_points: u16,
         requires_sign_off: bool,
     ) -> Result<()> {
         if seller_fee_basis_points > 10000 {
