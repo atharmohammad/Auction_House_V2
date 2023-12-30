@@ -7,19 +7,19 @@ use anchor_lang::prelude::*;
 pub struct CreateInstruction<'info> {
     #[account(init,payer=payer,seeds=[AUCTION_HOUSE.as_ref(),authority.key().as_ref(),treasury_mint.key().as_ref()],bump,space=CreateInstruction::MAX_SIZE)]
     auction_house: Account<'info, AuctionHouseV2Data>,
-
+    /// CHECK
     authority: UncheckedAccount<'info>,
-
+    /// CHECK
     treasury_mint: UncheckedAccount<'info>,
-
+    /// CHECK
     #[account(seeds=[TREASURY.as_bytes(),auction_house.key().as_ref()],bump)]
     treasury_account: UncheckedAccount<'info>,
-
+    /// CHECK
     treasury_withdrawal_account: UncheckedAccount<'info>,
-
+    /// CHECK
     #[account(seeds=[FEE.as_bytes(),auction_house.key().as_ref()],bump)]
     fee_account: UncheckedAccount<'info>,
-
+    /// CHECK
     fee_withdrawal_account: UncheckedAccount<'info>,
 
     #[account(mut)]
@@ -48,12 +48,12 @@ impl<'info> CreateInstruction<'info> {
 
         auction_house.fee_account_bump = *ctx
             .bumps
-            .get("auction_house_fee_account")
+            .get("fee_account")
             .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
 
         auction_house.treasury_bump = *ctx
             .bumps
-            .get("auction_house_treasury_account")
+            .get("treasury_account")
             .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
 
         auction_house.fee_account = ctx.accounts.fee_account.key();

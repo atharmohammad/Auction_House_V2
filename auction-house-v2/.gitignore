@@ -6,3 +6,5 @@ node_modules
 test-ledger
 .yarn
 *.env
+payer.json
+tests/temp-test.ts

@@ -7,8 +7,6 @@ mod instructions;
 mod state;
 mod utils;
 pub use instructions::*;
-use mpl_bubblegum::instructions::DelegateInstructionArgs;
-
 #[program]
 pub mod auction_house_v2 {
 
@@ -23,9 +21,21 @@ pub mod auction_house_v2 {
 
     pub fn list<'b, 'a>(
         ctx: Context<'_, '_, 'b, 'a, SellInstruction<'a>>,
-        args: DelegateInstructionArgs,
-        proof_len: u64,
+        buyer_price: u64,
+        root: [u8; 32],
+        data_hash: [u8; 32],
+        creator_hash: [u8; 32],
+        nonce: u64,
+        index: u32,
     ) -> Result<()> {
-        sell(ctx, args, proof_len)
+        sell(
+            ctx,
+            buyer_price,
+            root,
+            data_hash,
+            creator_hash,
+            nonce,
+            index,
+        )
     }
 }
