@@ -42,7 +42,6 @@ pub struct SellInstruction<'info> {
             owner.key().as_ref(),
             auction_house.key().as_ref(),
             asset_id.key().as_ref(),
-            auction_house.treasury_mint.as_ref(),
             &buyer_price.to_le_bytes()
         ],
         bump
@@ -75,13 +74,15 @@ pub struct SellInstruction<'info> {
 
 pub fn sell<'b, 'a>(
     ctx: Context<'_, '_, 'b, 'a, SellInstruction<'a>>,
-    _buyer_price: u64,
+    buyer_price: u64,
     root: [u8; 32],
     data_hash: [u8; 32],
     creator_hash: [u8; 32],
     nonce: u64,
     index: u32,
 ) -> Result<()> {
+    let auction_house = ctx.accounts.auction_house.to_account_info().clone();
+    let asset_id = ctx.accounts.asset_id.to_account_info().clone();
     let merkle_tree = ctx.accounts.merke_tree.to_account_info().clone();
     let owner = ctx.accounts.owner.to_account_info().clone();
     let previous_leaf_delegate = ctx
@@ -123,13 +124,21 @@ pub fn sell<'b, 'a>(
     builder.invoke()?;
 
     if seller_trade_state.data_is_empty() {
+        let seller_trade_state_seeds = [
+            TRADE_STATE.as_ref(),
+            owner.key.as_ref(),
+            auction_house.key.as_ref(),
+            asset_id.key.as_ref(),
+            &buyer_price.to_le_bytes(),
+            &[*seller_trade_state_bump],
+        ];
         create_or_allocate_account_raw(
             PROGRAM_ID,
             &seller_trade_state,
             &system_program,
             &owner,
             TRADE_STATE_SIZE,
-            &[],
+            &seller_trade_state_seeds,
         )?;
     }
     let data = &mut seller_trade_state.data.borrow_mut();
