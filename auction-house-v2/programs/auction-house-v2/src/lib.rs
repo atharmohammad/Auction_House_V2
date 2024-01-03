@@ -21,7 +21,7 @@ pub mod auction_house_v2 {
 
     pub fn list<'b, 'a>(
         ctx: Context<'_, '_, 'b, 'a, SellInstruction<'a>>,
-        buyer_price: u64,
+        seller_price: u64,
         root: [u8; 32],
         data_hash: [u8; 32],
         creator_hash: [u8; 32],
@@ -30,12 +30,16 @@ pub mod auction_house_v2 {
     ) -> Result<()> {
         sell(
             ctx,
-            buyer_price,
+            seller_price,
             root,
             data_hash,
             creator_hash,
             nonce,
             index,
         )
+    }
+
+    pub fn buy(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
+        bid(ctx, buyer_price)
     }
 }

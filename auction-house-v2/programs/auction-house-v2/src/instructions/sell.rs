@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::errors::AuctionHouseV2Errors;
-use crate::state::AuctionHouseV2Data;
+use crate::state::{AuctionHouseV2Data, TradeState};
 use crate::ID as PROGRAM_ID;
 use anchor_lang::prelude::*;
 use anchor_lang::{
@@ -11,7 +11,6 @@ use anchor_spl::token::Mint;
 use mpl_bubblegum::instructions::DelegateCpiBuilder;
 use mpl_utils::create_or_allocate_account_raw;
 #[derive(Accounts)]
-#[instruction(buyer_price:u64)]
 pub struct SellInstruction<'info> {
     #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump)]
     auction_house: Account<'info, AuctionHouseV2Data>,
@@ -42,11 +41,10 @@ pub struct SellInstruction<'info> {
             owner.key().as_ref(),
             auction_house.key().as_ref(),
             asset_id.key().as_ref(),
-            &buyer_price.to_le_bytes()
         ],
         bump
     )]
-    seller_trade_state: UncheckedAccount<'info>,
+    seller_trade_state: Account<'info, TradeState>,
 
     /// CHECK: Verified in CPI
     asset_id: UncheckedAccount<'info>,
@@ -74,7 +72,7 @@ pub struct SellInstruction<'info> {
 
 pub fn sell<'b, 'a>(
     ctx: Context<'_, '_, 'b, 'a, SellInstruction<'a>>,
-    buyer_price: u64,
+    seller_price: u64,
     root: [u8; 32],
     data_hash: [u8; 32],
     creator_hash: [u8; 32],
@@ -129,7 +127,7 @@ pub fn sell<'b, 'a>(
             owner.key.as_ref(),
             auction_house.key.as_ref(),
             asset_id.key.as_ref(),
-            &buyer_price.to_le_bytes(),
+            &seller_price.to_le_bytes(),
             &[*seller_trade_state_bump],
         ];
         create_or_allocate_account_raw(
@@ -141,8 +139,15 @@ pub fn sell<'b, 'a>(
             &seller_trade_state_seeds,
         )?;
     }
-    let data = &mut seller_trade_state.data.borrow_mut();
-    data[0] = *seller_trade_state_bump;
+
+    let seller_trade_state_info = TradeState {
+        auction_house: auction_house.key(),
+        owner: owner.key(),
+        amount: seller_price,
+        asset_id: asset_id.key(),
+        bump: *seller_trade_state_bump,
+    };
+    seller_trade_state_info.try_serialize(&mut *seller_trade_state.try_borrow_mut_data()?)?;
 
     Ok(())
 }

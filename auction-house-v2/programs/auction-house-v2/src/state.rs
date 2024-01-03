@@ -31,3 +31,12 @@ pub struct AuctionHouseV2Data {
     pub treasury_bump: u8,
     pub fee_account_bump: u8,
 }
+
+#[account]
+pub struct TradeState {
+    pub auction_house: Pubkey,
+    pub owner: Pubkey,
+    pub amount: u64,
+    pub asset_id: Pubkey,
+    pub bump: u8,
+}

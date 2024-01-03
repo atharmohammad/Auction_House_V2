@@ -4,4 +4,6 @@ pub const PROGRAM: &str = "program";
 pub const SIGNER: &str = "signer";
 pub const FEE: &str = "fee";
 pub const TREASURY: &str = "treasury";
-pub const TRADE_STATE_SIZE: usize = 1;
+pub const ESCROW: &str = "escrow";
+
+pub const TRADE_STATE_SIZE: usize = 32 * 3 + 8 + 1;
