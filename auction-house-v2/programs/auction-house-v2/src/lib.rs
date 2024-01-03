@@ -9,14 +9,13 @@ mod utils;
 pub use instructions::*;
 #[program]
 pub mod auction_house_v2 {
-
     use super::*;
-    pub fn create(
+    pub fn create_ah(
         ctx: Context<CreateInstruction>,
         seller_fee_basis_points: u16,
         requires_sign_off: bool,
     ) -> Result<()> {
-        CreateInstruction::create(ctx, seller_fee_basis_points, requires_sign_off)
+        create(ctx, seller_fee_basis_points, requires_sign_off)
     }
 
     pub fn list<'b, 'a>(

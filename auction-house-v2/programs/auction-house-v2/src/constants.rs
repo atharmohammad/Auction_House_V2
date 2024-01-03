@@ -7,3 +7,4 @@ pub const TREASURY: &str = "treasury";
 pub const ESCROW: &str = "escrow";
 
 pub const TRADE_STATE_SIZE: usize = 32 * 3 + 8 + 1;
+pub const MAX_AUCTION_HOUSE_SIZE: usize = 32 * 7 + 8 + 1 * 3 + 8;
