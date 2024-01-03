@@ -14,7 +14,7 @@ use mpl_utils::create_or_allocate_account_raw;
 #[derive(Accounts)]
 #[instruction(buyer_price:u64)]
 pub struct BidInstruction<'info> {
-    #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump)]
+    #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump=auction_house.bump)]
     auction_house: Account<'info, AuctionHouseV2Data>,
 
     /// CHECK: Verified in the auction house seeds contraints
@@ -31,7 +31,7 @@ pub struct BidInstruction<'info> {
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),bidder.key().as_ref()],bump)]
     buyer_escrow: UncheckedAccount<'info>,
 
-    #[account(mut,seeds=[TRADE_STATE.as_ref(),auction_house.key().as_ref(),bidder.key().as_ref()],bump)]
+    #[account(mut,seeds=[TRADE_STATE.as_ref(),bidder.key().as_ref(),auction_house.key().as_ref(),asset_id.key().as_ref()],bump)]
     buyer_trade_state: Account<'info, BuyerTradeState>,
 
     /// CHECK: Account seeds checked in constraints

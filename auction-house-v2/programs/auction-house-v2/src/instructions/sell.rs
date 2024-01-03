@@ -12,7 +12,7 @@ use mpl_bubblegum::instructions::DelegateCpiBuilder;
 use mpl_utils::create_or_allocate_account_raw;
 #[derive(Accounts)]
 pub struct SellInstruction<'info> {
-    #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump)]
+    #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump=auction_house.bump)]
     auction_house: Account<'info, AuctionHouseV2Data>,
 
     /// CHECK: Verified in auction house seeds
