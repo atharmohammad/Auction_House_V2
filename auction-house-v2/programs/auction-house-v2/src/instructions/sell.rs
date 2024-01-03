@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::errors::AuctionHouseV2Errors;
-use crate::state::{AuctionHouseV2Data, TradeState};
+use crate::state::{AuctionHouseV2Data, SellerTradeState};
 use crate::ID as PROGRAM_ID;
 use anchor_lang::prelude::*;
 use anchor_lang::{
@@ -44,7 +44,7 @@ pub struct SellInstruction<'info> {
         ],
         bump
     )]
-    seller_trade_state: Account<'info, TradeState>,
+    seller_trade_state: Account<'info, SellerTradeState>,
 
     /// CHECK: Verified in CPI
     asset_id: UncheckedAccount<'info>,
@@ -140,9 +140,9 @@ pub fn sell<'b, 'a>(
         )?;
     }
 
-    let seller_trade_state_info = TradeState {
+    let seller_trade_state_info = SellerTradeState {
         auction_house: auction_house.key(),
-        owner: owner.key(),
+        seller: owner.key(),
         amount: seller_price,
         asset_id: asset_id.key(),
         bump: *seller_trade_state_bump,

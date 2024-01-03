@@ -8,6 +8,9 @@ pub enum AuctionHouseV2Errors {
     #[msg("Invalid Seller Fee Basis Points")]
     InvalidSellerFeeBasisPoints,
 
+    #[msg("Numeric Overflow")]
+    NumericOverflow,
+
     #[msg("Not Enough Funds")]
     NotEnoughFunds,
 }
