@@ -19,4 +19,7 @@ pub enum AuctionHouseV2Errors {
 
     #[msg("Invalid buying order price don't match with selling order")]
     InvalidBuyingOrderPrice,
+
+    #[msg("Metadata hash does not match")]
+    MetadataHashMismatch,
 }
