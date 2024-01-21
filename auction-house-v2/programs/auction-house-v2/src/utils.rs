@@ -14,7 +14,7 @@ pub fn assert_trade_states<'a>(
     if seller_trade_state.asset_id != buyer_trade_state.asset_id {
         return Err(AuctionHouseV2Errors::InvalidBuyingOrSellingOrder.into());
     }
-    if seller_trade_state.amount != buyer_trade_state.amount {
+    if seller_trade_state.amount < buyer_trade_state.amount {
         return Err(AuctionHouseV2Errors::InvalidBuyingOrderPrice.into());
     }
     Ok(())

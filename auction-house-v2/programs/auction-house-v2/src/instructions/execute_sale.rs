@@ -96,15 +96,9 @@ pub fn execute_sale<'a>(
     metadata: MetadataArgs,
 ) -> Result<()> {
     let auction_house = ctx.accounts.auction_house.clone();
-    let asset_id_info = ctx.accounts.asset_id.to_account_info().clone();
     let merkle_tree_info = ctx.accounts.merke_tree.to_account_info().clone();
     let seller_info = ctx.accounts.seller.to_account_info().clone();
     let buyer_info = ctx.accounts.buyer.to_account_info().clone();
-    let previous_leaf_delegate_info = ctx
-        .accounts
-        .previous_leaf_delegate
-        .to_account_info()
-        .clone();
     let treasury_account = ctx.accounts.treasury_account.to_account_info().clone();
     let seller_trade_state = ctx.accounts.seller_trade_state.clone();
     let buyer_trade_state = ctx.accounts.buyer_trade_state.clone();
@@ -123,10 +117,10 @@ pub fn execute_sale<'a>(
         return Err(AuctionHouseV2Errors::MetadataHashMismatch.into());
     }
 
-    let seller_trade_state_bump = seller_trade_state.bump;
     // assert buyer and seller trade state configs
+    let buyer_funds = seller_trade_state.amount;
     assert_trade_states(&seller_trade_state, &buyer_trade_state)?;
-    if buyer_escrow.lamports() < buyer_trade_state.amount {
+    if buyer_escrow.lamports() < buyer_funds {
         return Err(AuctionHouseV2Errors::NotEnoughFunds.into());
     }
 
@@ -139,7 +133,7 @@ pub fn execute_sale<'a>(
     let (creators_path, proof_path) = remaining_accounts.split_at(creators.len());
 
     // pay marketplace fees
-    let buyer_funds = buyer_escrow.lamports();
+
     let marketplace_fee = buyer_funds
         .checked_mul(auction_house.seller_fee_basis_points.into())
         .unwrap()
@@ -161,7 +155,7 @@ pub fn execute_sale<'a>(
     )?;
 
     // pay creator royalties
-    let buyer_funds_after_marketplace_fee = buyer_funds.checked_sub(marketplace_fee).unwrap();
+    let mut remaining_buyer_funds = buyer_funds.checked_sub(marketplace_fee).unwrap();
     let creator_royalties = buyer_funds
         .checked_mul(royalty_basis_points.into())
         .unwrap()
@@ -174,6 +168,7 @@ pub fn execute_sale<'a>(
             .unwrap()
             .checked_div(100)
             .unwrap();
+        remaining_buyer_funds = remaining_buyer_funds.checked_sub(share).unwrap();
         let pay_to_creator_instruction = transfer(buyer_escrow.key, &creator.address, share);
         let creator_info = next_account_info(creator_iter)?;
         let pay_to_creator_accounts = [
@@ -211,19 +206,18 @@ pub fn execute_sale<'a>(
     transfer_nft_to_buyer_builder.invoke()?;
 
     // transfer funds to seller
-    let remaining_buyer_funds: u64 = buyer_funds_after_marketplace_fee
-        .checked_sub(creator_royalties)
-        .unwrap();
-
     let transfer_to_seller_instruction =
         transfer(buyer_escrow.key, seller_info.key, remaining_buyer_funds);
-    let transfer_to_seller_accounts = [buyer_escrow, seller_info, system_program_info];
+    let transfer_to_seller_accounts = [buyer_escrow, seller_info.clone(), system_program_info];
     invoke_signed(
         &transfer_to_seller_instruction,
         &transfer_to_seller_accounts,
         &[&buyer_escrow_signer_seeds],
     )?;
 
-    // todo: close trade states
+    // close trade states
+    seller_trade_state.close(seller_info)?;
+    buyer_trade_state.close(buyer_info)?;
+
     Ok(())
 }
