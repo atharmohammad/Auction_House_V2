@@ -15,32 +15,32 @@ use mpl_utils::create_or_allocate_account_raw;
 #[instruction(buyer_price:u64)]
 pub struct BidInstruction<'info> {
     #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump=auction_house.bump)]
-    auction_house: Account<'info, AuctionHouseV2Data>,
+    pub auction_house: Account<'info, AuctionHouseV2Data>,
 
     /// CHECK: Verified in the auction house seeds contraints
-    auction_house_authority: UncheckedAccount<'info>,
+    pub auction_house_authority: UncheckedAccount<'info>,
 
-    treasury_mint: Account<'info, Mint>,
+    pub treasury_mint: Account<'info, Mint>,
 
     #[account(mut)]
-    bidder: Signer<'info>,
+    pub bidder: Signer<'info>,
 
     /// CHECK: Verified in CPI
-    asset_id: UncheckedAccount<'info>,
+    pub asset_id: UncheckedAccount<'info>,
 
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),bidder.key().as_ref()],bump)]
-    buyer_escrow: UncheckedAccount<'info>,
+    pub buyer_escrow: UncheckedAccount<'info>,
 
     #[account(mut,seeds=[TRADE_STATE.as_ref(),bidder.key().as_ref(),auction_house.key().as_ref(),asset_id.key().as_ref()],bump)]
-    buyer_trade_state: Account<'info, BuyerTradeState>,
+    pub buyer_trade_state: Account<'info, BuyerTradeState>,
 
     /// CHECK: Account seeds checked in constraints
     #[account(seeds=[FEE.as_bytes(),auction_house.key().as_ref()],bump)]
-    auction_house_fee_account: UncheckedAccount<'info>,
+    pub auction_house_fee_account: UncheckedAccount<'info>,
 
-    system_program: Program<'info, System>,
+    pub system_program: Program<'info, System>,
 
-    rent: Sysvar<'info, Rent>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {

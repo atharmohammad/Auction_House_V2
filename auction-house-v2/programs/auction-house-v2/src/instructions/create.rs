@@ -6,26 +6,26 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct CreateInstruction<'info> {
     #[account(init,payer=payer,seeds=[AUCTION_HOUSE.as_ref(),authority.key().as_ref(),treasury_mint.key().as_ref()],bump,space=MAX_AUCTION_HOUSE_SIZE)]
-    auction_house: Account<'info, AuctionHouseV2Data>,
+    pub auction_house: Account<'info, AuctionHouseV2Data>,
     /// CHECK
-    authority: UncheckedAccount<'info>,
+    pub authority: UncheckedAccount<'info>,
     /// CHECK
-    treasury_mint: UncheckedAccount<'info>,
+    pub treasury_mint: UncheckedAccount<'info>,
     /// CHECK
     #[account(seeds=[TREASURY.as_bytes(),auction_house.key().as_ref()],bump)]
-    treasury_account: UncheckedAccount<'info>,
+    pub treasury_account: UncheckedAccount<'info>,
     /// CHECK
-    treasury_withdrawal_account: UncheckedAccount<'info>,
+    pub treasury_withdrawal_account: UncheckedAccount<'info>,
     /// CHECK
     #[account(seeds=[FEE.as_bytes(),auction_house.key().as_ref()],bump)]
-    fee_account: UncheckedAccount<'info>,
+    pub fee_account: UncheckedAccount<'info>,
     /// CHECK
-    fee_withdrawal_account: UncheckedAccount<'info>,
+    pub fee_withdrawal_account: UncheckedAccount<'info>,
 
     #[account(mut)]
-    payer: Signer<'info>,
+    pub payer: Signer<'info>,
 
-    system_program: Program<'info, System>,
+    pub system_program: Program<'info, System>,
 }
 
 pub fn create(
