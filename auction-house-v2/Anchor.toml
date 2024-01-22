@@ -14,4 +14,4 @@ cluster = "https://devnet.helius-rpc.com/?api-key=870c3bba-9ced-4913-ad17-e8503b
 wallet = "/Users/athar/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 js-tests/**/*.ts"

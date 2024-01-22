@@ -18,10 +18,21 @@ default = []
 [dependencies]
 anchor-lang = "0.28.0"
 borsh = ">= 0.9"
-mpl-token-metadata="3.2.3"
 mpl-bubblegum="1.0.0"
 winnow="=0.4.1"
 anchor-spl = "0.28.0"
 strum = "0.24"
 strum_macros = "0.24"
 mpl-utils = { version = "0.3.1" }
+
+[dev-dependencies]
+anchor-client = "0.28.0"
+rmp-serde = "1.1.1"
+shellexpand = "2.1.2"
+serde = { version = "1.0.147", features = ["derive"]}
+serde_json = "1.0"
+solana-program = "1.16.10"
+solana-program-test = "1.16.10"
+solana-sdk = "1.16.10"
+tokio = { version = "1.35.1", features = ["full"] }
+env_logger="0.9.3"
