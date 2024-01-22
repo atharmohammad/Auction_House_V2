@@ -28,6 +28,7 @@ pub struct BidInstruction<'info> {
     /// CHECK: Verified in CPI
     pub asset_id: UncheckedAccount<'info>,
 
+    /// CHECK: Account seeds checked in constraints
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),bidder.key().as_ref()],bump)]
     pub buyer_escrow: UncheckedAccount<'info>,
 

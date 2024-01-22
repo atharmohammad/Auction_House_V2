@@ -14,6 +14,7 @@ pub struct ExecuteSaleInstruction<'info> {
     #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump=auction_house.bump)]
     pub auction_house: Account<'info, AuctionHouseV2Data>,
 
+    /// CHECK: verified in auction_house seeds constraints
     pub auction_house_authority: AccountInfo<'info>,
 
     pub treasury_mint: Account<'info, Mint>,
@@ -24,6 +25,7 @@ pub struct ExecuteSaleInstruction<'info> {
     /// CHECK: Verified in CPI
     pub tree_config: UncheckedAccount<'info>,
 
+    /// CHECK: verified in seller_trade_state seeds constraints
     #[account(mut)]
     pub seller: AccountInfo<'info>,
 
@@ -47,9 +49,11 @@ pub struct ExecuteSaleInstruction<'info> {
     )]
     pub seller_trade_state: Account<'info, SellerTradeState>,
 
+    /// CHECK: verified in buyer_trade_state seeds constraints
     #[account(mut)]
     pub buyer: AccountInfo<'info>,
 
+    /// CHECK: Account seeds checked in constraints
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),buyer.key().as_ref()],bump)]
     pub buyer_escrow: UncheckedAccount<'info>,
 
@@ -62,8 +66,6 @@ pub struct ExecuteSaleInstruction<'info> {
     /// CHECK: Account seeds checked in constraints
     #[account(seeds=[FEE.as_bytes(),auction_house.key().as_ref()],bump=auction_house.fee_account_bump)]
     pub auction_house_fee_account: UncheckedAccount<'info>,
-
-    pub auction_house_v2_program: AccountInfo<'info>,
 
     /// CHECK: Account seeds checked in constraints
     #[account(seeds=[PROGRAM.as_bytes(), SIGNER.as_bytes()], bump)]
