@@ -154,14 +154,14 @@ pub fn execute_sale<'a>(
     let pay_to_auction_house_instruction =
         transfer(buyer_escrow.key, treasury_account.key, auction_house_fees);
 
-    let pay_to_auction_house_marketplace_accounts = [
+    let pay_to_auction_house_accounts = [
         buyer_escrow.clone(),
         treasury_account.clone(),
         system_program_info.clone(),
     ];
     invoke_signed(
         &pay_to_auction_house_instruction,
-        &pay_to_auction_house_marketplace_accounts,
+        &pay_to_auction_house_accounts,
         &[&buyer_escrow_signer_seeds],
     )?;
 
