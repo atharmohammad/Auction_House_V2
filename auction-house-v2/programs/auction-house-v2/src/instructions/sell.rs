@@ -11,6 +11,7 @@ use anchor_spl::token::Mint;
 use mpl_bubblegum::instructions::DelegateCpiBuilder;
 use mpl_utils::create_or_allocate_account_raw;
 #[derive(Accounts)]
+#[instruction(seller_price:u64)]
 pub struct SellInstruction<'info> {
     #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump=auction_house.bump)]
     pub auction_house: Account<'info, AuctionHouseV2Data>,
@@ -41,6 +42,7 @@ pub struct SellInstruction<'info> {
             owner.key().as_ref(),
             auction_house.key().as_ref(),
             asset_id.key().as_ref(),
+            seller_price.to_le_bytes().as_ref()
         ],
         bump
     )]

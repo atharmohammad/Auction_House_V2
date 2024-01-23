@@ -2,7 +2,7 @@ use crate::{
     constants::*,
     errors::AuctionHouseV2Errors,
     state::{AuctionHouseV2Data, BuyerTradeState, SellerTradeState},
-    utils::{assert_trade_states, cmp_bytes},
+    utils::cmp_bytes,
 };
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_lang::{prelude::*, solana_program::system_instruction::transfer};
@@ -10,6 +10,7 @@ use anchor_spl::token::Mint;
 use mpl_bubblegum::{hash::hash_metadata, instructions::TransferCpiBuilder, types::MetadataArgs};
 
 #[derive(Accounts)]
+#[instruction(buyer_price:u64)]
 pub struct ExecuteSaleInstruction<'info> {
     #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump=auction_house.bump)]
     pub auction_house: Account<'info, AuctionHouseV2Data>,
@@ -33,9 +34,6 @@ pub struct ExecuteSaleInstruction<'info> {
     #[account(mut)]
     pub merke_tree: UncheckedAccount<'info>,
 
-    /// CHECK: Verified in CPI
-    pub previous_leaf_delegate: UncheckedAccount<'info>,
-
     /// CHECK: Account seeds checked in constraints
     #[account(
         mut,
@@ -44,6 +42,7 @@ pub struct ExecuteSaleInstruction<'info> {
             seller.key().as_ref(),
             auction_house.key().as_ref(),
             asset_id.key().as_ref(),
+            buyer_price.to_le_bytes().as_ref()
         ],
         bump=seller_trade_state.bump
     )]
@@ -57,7 +56,7 @@ pub struct ExecuteSaleInstruction<'info> {
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),buyer.key().as_ref()],bump)]
     pub buyer_escrow: UncheckedAccount<'info>,
 
-    #[account(mut,seeds=[TRADE_STATE.as_ref(),buyer.key().as_ref(),auction_house.key().as_ref(),asset_id.key().as_ref()],bump=buyer_trade_state.bump)]
+    #[account(mut,seeds=[TRADE_STATE.as_ref(),buyer.key().as_ref(),auction_house.key().as_ref(),asset_id.key().as_ref(),buyer_price.to_le_bytes().as_ref()],bump=buyer_trade_state.bump)]
     pub buyer_trade_state: Account<'info, BuyerTradeState>,
 
     /// CHECK: Verified in CPI
@@ -102,8 +101,10 @@ pub fn execute_sale<'a>(
     let seller_info = ctx.accounts.seller.to_account_info().clone();
     let buyer_info = ctx.accounts.buyer.to_account_info().clone();
     let treasury_account = ctx.accounts.treasury_account.to_account_info().clone();
-    let seller_trade_state = ctx.accounts.seller_trade_state.clone();
+    let seller_trade_state_info = ctx.accounts.seller_trade_state.to_account_info().clone();
+    let buyer_trade_state_info = ctx.accounts.buyer_trade_state.to_account_info().clone();
     let buyer_trade_state = ctx.accounts.buyer_trade_state.clone();
+    let seller_trade_state = ctx.accounts.seller_trade_state.clone();
     let buyer_escrow = ctx.accounts.buyer_escrow.to_account_info().clone();
     let program_as_signer_info = ctx.accounts.program_as_signer.to_account_info().clone();
     let compression_program_info = ctx.accounts.compression_program.to_account_info().clone();
@@ -119,9 +120,18 @@ pub fn execute_sale<'a>(
         return Err(AuctionHouseV2Errors::MetadataHashMismatch.into());
     }
 
+    if buyer_trade_state_info.data_is_empty() {
+        return Err(AuctionHouseV2Errors::InvalidBuyerTradeState.into());
+    }
+
+    if seller_trade_state_info.data_is_empty()
+        || seller_trade_state.amount != buyer_trade_state.amount
+    {
+        return Err(AuctionHouseV2Errors::BothPartiesNeedToAgreeToSale.into());
+    }
+
     // assert buyer and seller trade state configs
-    let buyer_funds = seller_trade_state.amount;
-    assert_trade_states(&seller_trade_state, &buyer_trade_state)?;
+    let buyer_funds = buyer_trade_state.amount;
     if buyer_escrow.lamports() < buyer_funds {
         return Err(AuctionHouseV2Errors::NotEnoughFunds.into());
     }
@@ -134,30 +144,29 @@ pub fn execute_sale<'a>(
     let creators = metadata.creators;
     let (creators_path, proof_path) = remaining_accounts.split_at(creators.len());
 
-    // pay marketplace fees
-
-    let marketplace_fee = buyer_funds
+    // pay auction house fees
+    let auction_house_fees = buyer_funds
         .checked_mul(auction_house.seller_fee_basis_points.into())
         .unwrap()
         .checked_div(10000)
         .unwrap();
 
-    let pay_to_marketplace_instruction =
-        transfer(buyer_escrow.key, treasury_account.key, marketplace_fee);
+    let pay_to_auction_house_instruction =
+        transfer(buyer_escrow.key, treasury_account.key, auction_house_fees);
 
-    let pay_to_marketplace_accounts = [
+    let pay_to_auction_house_marketplace_accounts = [
         buyer_escrow.clone(),
         treasury_account.clone(),
         system_program_info.clone(),
     ];
     invoke_signed(
-        &pay_to_marketplace_instruction,
-        &pay_to_marketplace_accounts,
+        &pay_to_auction_house_instruction,
+        &pay_to_auction_house_marketplace_accounts,
         &[&buyer_escrow_signer_seeds],
     )?;
 
     // pay creator royalties
-    let mut remaining_buyer_funds = buyer_funds.checked_sub(marketplace_fee).unwrap();
+    let mut remaining_buyer_funds = buyer_funds.checked_sub(auction_house_fees).unwrap();
     let creator_royalties = buyer_funds
         .checked_mul(royalty_basis_points.into())
         .unwrap()

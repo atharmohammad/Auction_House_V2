@@ -22,4 +22,10 @@ pub enum AuctionHouseV2Errors {
 
     #[msg("Metadata hash does not match")]
     MetadataHashMismatch,
+
+    #[msg("Buyer trade state is invalid")]
+    InvalidBuyerTradeState,
+
+    #[msg("Both parties need to agree on a price")]
+    BothPartiesNeedToAgreeToSale,
 }

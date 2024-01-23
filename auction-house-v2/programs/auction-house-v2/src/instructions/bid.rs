@@ -32,7 +32,7 @@ pub struct BidInstruction<'info> {
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),bidder.key().as_ref()],bump)]
     pub buyer_escrow: UncheckedAccount<'info>,
 
-    #[account(mut,seeds=[TRADE_STATE.as_ref(),bidder.key().as_ref(),auction_house.key().as_ref(),asset_id.key().as_ref()],bump)]
+    #[account(mut,seeds=[TRADE_STATE.as_ref(),bidder.key().as_ref(),auction_house.key().as_ref(),asset_id.key().as_ref(),buyer_price.to_le_bytes().as_ref()],bump)]
     pub buyer_trade_state: Account<'info, BuyerTradeState>,
 
     /// CHECK: Account seeds checked in constraints
@@ -104,10 +104,12 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
     }
 
     if buyer_trade_state.data_is_empty() {
+        let price = buyer_price.to_le_bytes();
         let signer_seeds = [
             ESCROW.as_ref(),
             auction_house.key.as_ref(),
             bidder.key.as_ref(),
+            price.as_ref(),
         ];
         create_or_allocate_account_raw(
             PROGRAM_ID,
