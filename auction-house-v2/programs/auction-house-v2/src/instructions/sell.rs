@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::errors::AuctionHouseV2Errors;
-use crate::state::{AuctionHouseV2Data, SellerTradeState};
+use crate::state::AuctionHouseV2Data;
 use crate::ID as PROGRAM_ID;
 use anchor_lang::prelude::*;
 use anchor_lang::{
@@ -46,7 +46,7 @@ pub struct SellInstruction<'info> {
         ],
         bump
     )]
-    pub seller_trade_state: Account<'info, SellerTradeState>,
+    pub seller_trade_state: UncheckedAccount<'info>,
 
     /// CHECK: Verified in CPI
     pub asset_id: UncheckedAccount<'info>,
@@ -90,7 +90,7 @@ pub fn sell<'b, 'a>(
         .previous_leaf_delegate
         .to_account_info()
         .clone();
-    let seller_trade_state = ctx.accounts.seller_trade_state.to_account_info().clone();
+    let seller_trade_state_info = ctx.accounts.seller_trade_state.to_account_info().clone();
     let program_as_signer = ctx.accounts.program_as_signer.to_account_info().clone();
     let compression_program = ctx.accounts.compression_program.to_account_info().clone();
     let system_program = ctx.accounts.system_program.to_account_info().clone();
@@ -123,7 +123,7 @@ pub fn sell<'b, 'a>(
     }
     builder.invoke()?;
 
-    if seller_trade_state.data_is_empty() {
+    if seller_trade_state_info.data_is_empty() {
         let seller_trade_state_seeds = [
             TRADE_STATE.as_ref(),
             owner.key.as_ref(),
@@ -134,7 +134,7 @@ pub fn sell<'b, 'a>(
         ];
         create_or_allocate_account_raw(
             PROGRAM_ID,
-            &seller_trade_state,
+            &seller_trade_state_info,
             &system_program,
             &owner,
             TRADE_STATE_SIZE,
@@ -142,14 +142,8 @@ pub fn sell<'b, 'a>(
         )?;
     }
 
-    let seller_trade_state_info = SellerTradeState {
-        auction_house: auction_house.key(),
-        seller: owner.key(),
-        amount: seller_price,
-        asset_id: asset_id.key(),
-        bump: *seller_trade_state_bump,
-    };
-    seller_trade_state_info.try_serialize(&mut *seller_trade_state.try_borrow_mut_data()?)?;
+    let data = &mut seller_trade_state_info.data.borrow_mut();
+    data[0] = *seller_trade_state_bump;
 
     Ok(())
 }

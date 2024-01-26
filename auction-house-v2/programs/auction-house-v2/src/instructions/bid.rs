@@ -1,4 +1,4 @@
-use crate::state::{AuctionHouseV2Data, BuyerTradeState};
+use crate::state::AuctionHouseV2Data;
 use crate::ID as PROGRAM_ID;
 use crate::{constants::*, errors::AuctionHouseV2Errors};
 use anchor_lang::prelude::*;
@@ -32,8 +32,14 @@ pub struct BidInstruction<'info> {
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),bidder.key().as_ref()],bump)]
     pub buyer_escrow: UncheckedAccount<'info>,
 
-    #[account(mut,seeds=[TRADE_STATE.as_ref(),bidder.key().as_ref(),auction_house.key().as_ref(),asset_id.key().as_ref(),buyer_price.to_le_bytes().as_ref()],bump)]
-    pub buyer_trade_state: Account<'info, BuyerTradeState>,
+    #[account(mut,seeds=[
+        TRADE_STATE.as_ref(),
+        bidder.key().as_ref(),
+        auction_house.key().as_ref(),
+        asset_id.key().as_ref(),
+        buyer_price.to_le_bytes().as_ref()
+        ],bump)]
+    pub buyer_trade_state: UncheckedAccount<'info>,
 
     /// CHECK: Account seeds checked in constraints
     #[account(seeds=[FEE.as_bytes(),auction_house.key().as_ref()],bump)]
@@ -50,7 +56,7 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
     let bidder = ctx.accounts.bidder.to_account_info().clone();
     let asset_id = ctx.accounts.asset_id.to_account_info().clone();
     let buyer_escrow = ctx.accounts.buyer_escrow.to_account_info().clone();
-    let buyer_trade_state = ctx.accounts.buyer_trade_state.to_account_info().clone();
+    let buyer_trade_state_info = ctx.accounts.buyer_trade_state.to_account_info().clone();
     let system_program = ctx.accounts.system_program.to_account_info().clone();
     let rent = ctx.accounts.rent.clone();
     let buyer_trade_state_bump = ctx
@@ -67,6 +73,7 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
             ESCROW.as_ref(),
             auction_house.key.as_ref(),
             bidder.key.as_ref(),
+            &[*buyer_escrow_bump],
         ];
         create_or_allocate_account_raw(
             PROGRAM_ID,
@@ -103,31 +110,26 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
         invoke(&transfer_instruction, &transfer_instruction_accounts)?;
     }
 
-    if buyer_trade_state.data_is_empty() {
-        let price = buyer_price.to_le_bytes();
-        let signer_seeds = [
-            ESCROW.as_ref(),
-            auction_house.key.as_ref(),
+    if buyer_trade_state_info.data_is_empty() {
+        let buyer_trade_state_seeds = [
+            TRADE_STATE.as_ref(),
             bidder.key.as_ref(),
-            price.as_ref(),
+            auction_house.key.as_ref(),
+            asset_id.key.as_ref(),
+            &buyer_price.to_le_bytes(),
+            &[*buyer_trade_state_bump],
         ];
         create_or_allocate_account_raw(
             PROGRAM_ID,
-            &buyer_trade_state,
+            &buyer_trade_state_info,
             &system_program,
             &bidder,
             TRADE_STATE_SIZE,
-            &signer_seeds,
+            &buyer_trade_state_seeds,
         )?;
     }
-    let buyer_trade_state_info = BuyerTradeState {
-        auction_house: auction_house.key(),
-        buyer: bidder.key(),
-        amount: buyer_price,
-        asset_id: asset_id.key(),
-        bump: *buyer_trade_state_bump,
-        escrow_bump: *buyer_escrow_bump,
-    };
-    buyer_trade_state_info.try_serialize(&mut *buyer_trade_state.try_borrow_mut_data()?)?;
+    let data = &mut buyer_trade_state_info.data.borrow_mut();
+    data[0] = *buyer_trade_state_bump;
+
     Ok(())
 }

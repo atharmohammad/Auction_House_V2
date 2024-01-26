@@ -46,6 +46,7 @@ pub mod auction_house_v2 {
 
     pub fn execute_sale<'a>(
         ctx: Context<'_, '_, '_, 'a, ExecuteSaleInstruction<'a>>,
+        buyer_price: u64,
         root: [u8; 32],
         data_hash: [u8; 32],
         creator_hash: [u8; 32],
@@ -56,6 +57,7 @@ pub mod auction_house_v2 {
     ) -> Result<()> {
         instructions::execute_sale(
             ctx,
+            buyer_price,
             root,
             data_hash,
             creator_hash,
