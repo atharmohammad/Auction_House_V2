@@ -28,4 +28,10 @@ pub enum AuctionHouseV2Errors {
 
     #[msg("Both parties need to agree on a price")]
     BothPartiesNeedToAgreeToSale,
+
+    #[msg("Seller trade is invalid")]
+    InvalidSellerTradeState,
+
+    #[msg("Provided keys don't match")]
+    PublicKeyMismatch,
 }

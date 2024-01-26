@@ -65,4 +65,24 @@ pub mod auction_house_v2 {
             metadata,
         )
     }
+
+    pub fn cancel<'a>(
+        ctx: Context<'_, '_, '_, 'a, CancelInstruction<'a>>,
+        seller_price: u64,
+        root: [u8; 32],
+        data_hash: [u8; 32],
+        creator_hash: [u8; 32],
+        nonce: u64,
+        index: u32,
+    ) -> Result<()> {
+        instructions::cancel(
+            ctx,
+            seller_price,
+            root,
+            data_hash,
+            creator_hash,
+            nonce,
+            index,
+        )
+    }
 }
