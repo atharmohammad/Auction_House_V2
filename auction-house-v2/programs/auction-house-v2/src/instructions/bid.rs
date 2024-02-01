@@ -32,6 +32,7 @@ pub struct BidInstruction<'info> {
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),bidder.key().as_ref()],bump)]
     pub buyer_escrow: UncheckedAccount<'info>,
 
+    /// CHECK: Account seeds checked in constraints
     #[account(mut,seeds=[
         TRADE_STATE.as_ref(),
         bidder.key().as_ref(),
@@ -63,35 +64,14 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
         .bumps
         .get("buyer_trade_state")
         .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
-    let buyer_escrow_bump = ctx
-        .bumps
-        .get("buyer_escrow")
-        .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
 
-    if buyer_escrow.data_is_empty() {
-        let signer_seeds = [
-            ESCROW.as_ref(),
-            auction_house.key.as_ref(),
-            bidder.key.as_ref(),
-            &[*buyer_escrow_bump],
-        ];
-        create_or_allocate_account_raw(
-            PROGRAM_ID,
-            &buyer_escrow,
-            &system_program,
-            &bidder,
-            0,
-            &signer_seeds,
-        )?;
-    }
-    let total_escrow_funds = buyer_escrow
-        .lamports()
-        .checked_sub(rent.minimum_balance(buyer_escrow.data_len()))
+    let minimum_funds_required = buyer_price
+        .checked_add(rent.minimum_balance(buyer_escrow.data_len()))
         .ok_or(AuctionHouseV2Errors::NumericOverflow)?;
 
-    if total_escrow_funds < buyer_price {
-        let required_funds = buyer_price
-            .checked_sub(total_escrow_funds)
+    if buyer_escrow.lamports() < minimum_funds_required {
+        let required_funds = minimum_funds_required
+            .checked_sub(buyer_escrow.lamports())
             .ok_or(AuctionHouseV2Errors::NumericOverflow)?;
 
         let total_buyer_funds = bidder

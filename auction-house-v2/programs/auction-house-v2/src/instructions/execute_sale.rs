@@ -1,24 +1,26 @@
-use crate::utils::close;
+use crate::utils::{close, get_fee_payer, hash_metadata};
+use crate::MetadataArgs;
 use crate::{
     constants::*, errors::AuctionHouseV2Errors, state::AuctionHouseV2Data, utils::cmp_bytes,
 };
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_lang::{prelude::*, solana_program::system_instruction::transfer};
 use anchor_spl::token::Mint;
-use mpl_bubblegum::{hash::hash_metadata, instructions::TransferCpiBuilder, types::MetadataArgs};
+use mpl_bubblegum::instructions::TransferCpiBuilder;
 
 #[derive(Accounts)]
 #[instruction(buyer_price:u64)]
 pub struct ExecuteSaleInstruction<'info> {
     #[account(seeds=[AUCTION_HOUSE.as_ref(),auction_house_authority.key().as_ref(),treasury_mint.key().as_ref()],bump=auction_house.bump)]
-    pub auction_house: Account<'info, AuctionHouseV2Data>,
+    pub auction_house: Box<Account<'info, AuctionHouseV2Data>>,
 
     /// CHECK: verified in auction_house seeds constraints
     pub auction_house_authority: AccountInfo<'info>,
 
-    pub treasury_mint: Account<'info, Mint>,
+    pub treasury_mint: Box<Account<'info, Mint>>,
 
-    /// CHECK: Verified in CPI
+    /// CHECK: Account seeds checked in constraints
+    #[account(mut,seeds=[TREASURY.as_bytes(),auction_house.key().as_ref()],bump)]
     pub treasury_account: UncheckedAccount<'info>,
 
     /// CHECK: Verified in CPI
@@ -54,6 +56,7 @@ pub struct ExecuteSaleInstruction<'info> {
     #[account(mut,seeds=[ESCROW.as_ref(),auction_house.key().as_ref(),buyer.key().as_ref()],bump)]
     pub buyer_escrow: UncheckedAccount<'info>,
 
+    /// CHECK: Account seeds checked in constraints
     #[account(mut,seeds=[
             TRADE_STATE.as_ref(),
             buyer.key().as_ref(),
@@ -104,6 +107,12 @@ pub fn execute_sale<'a>(
     metadata: MetadataArgs,
 ) -> Result<()> {
     let auction_house = ctx.accounts.auction_house.clone();
+    let auction_house_fee_account = ctx
+        .accounts
+        .auction_house_fee_account
+        .to_account_info()
+        .clone();
+    let auction_house_authority = ctx.accounts.auction_house_authority.clone();
     let merkle_tree_info = ctx.accounts.merke_tree.to_account_info().clone();
     let seller_info = ctx.accounts.seller.to_account_info().clone();
     let buyer_info = ctx.accounts.buyer.to_account_info().clone();
@@ -138,11 +147,51 @@ pub fn execute_sale<'a>(
         return Err(AuctionHouseV2Errors::NotEnoughFunds.into());
     }
 
+    let auction_house_fee_account_bump = ctx
+        .bumps
+        .get("auction_house_fee_account")
+        .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
+
+    let auction_house_key = auction_house.key();
+    let auction_house_fee_payer_seeds = [
+        FEE.as_bytes(),
+        auction_house_key.as_ref(),
+        &[*auction_house_fee_account_bump],
+    ];
+
+    //TODO: Use this fee payer for creating token accounts in non native auction house
+    let (_fee_payer, _fee_payer_seeds) = get_fee_payer(
+        auction_house.clone(),
+        auction_house_fee_account.clone(),
+        &auction_house_fee_payer_seeds,
+        auction_house_authority,
+        seller_info.clone(),
+        buyer_info.clone(),
+    )?;
+
+    let buyer_escrow_bump = ctx
+        .bumps
+        .get("buyer_escrow")
+        .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
+
     let buyer_escrow_signer_seeds = [
         ESCROW.as_bytes(),
         auction_house_info.key.as_ref(),
         buyer_info.key.as_ref(),
+        &[*buyer_escrow_bump],
     ];
+
+    let program_as_signer_bump = ctx
+        .bumps
+        .get("program_as_signer")
+        .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
+
+    let program_as_signer_seeds = [
+        PROGRAM.as_bytes(),
+        SIGNER.as_bytes(),
+        &[*program_as_signer_bump],
+    ];
+
     let creators = metadata.creators;
     let (creators_path, proof_path) = remaining_accounts.split_at(creators.len());
 
@@ -182,8 +231,8 @@ pub fn execute_sale<'a>(
             .checked_div(100)
             .unwrap();
         remaining_buyer_funds = remaining_buyer_funds.checked_sub(share).unwrap();
-        let pay_to_creator_instruction = transfer(buyer_escrow.key, &creator.address, share);
         let creator_info = next_account_info(creator_iter)?;
+        let pay_to_creator_instruction = transfer(buyer_escrow.key, &creator.address, share);
         let pay_to_creator_accounts = [
             buyer_escrow.clone(),
             creator_info.clone(),
@@ -216,7 +265,7 @@ pub fn execute_sale<'a>(
     for info in proof_path {
         transfer_nft_to_buyer_builder.add_remaining_account(info, false, false);
     }
-    transfer_nft_to_buyer_builder.invoke()?;
+    transfer_nft_to_buyer_builder.invoke_signed(&[&program_as_signer_seeds])?;
 
     // transfer funds to seller
     let transfer_to_seller_instruction =

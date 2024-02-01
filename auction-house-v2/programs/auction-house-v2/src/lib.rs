@@ -1,4 +1,4 @@
-declare_id!("AHV2WqTNWDjBqY2zv9eUAMHneicckWf5NZxnPJvYxrkA");
+declare_id!("AHV2XGm1jVAZp3NtwdVyHkbskbxk3oMfn73SXBkejUQb");
 
 use anchor_lang::prelude::*;
 mod constants;
@@ -8,7 +8,6 @@ use instructions::*;
 mod state;
 pub use state::*;
 mod utils;
-use mpl_bubblegum::types::MetadataArgs;
 #[program]
 pub mod auction_house_v2 {
     use super::*;

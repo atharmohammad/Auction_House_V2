@@ -1,9 +1,11 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::keccak;
 use anchor_lang::{solana_program::program_memory::sol_memcmp, system_program};
 use anchor_spl::token_interface::spl_token_2022::cmp_pubkeys;
 
 use crate::constants::TRADE_STATE;
-use crate::ID;
+use crate::errors::AuctionHouseV2Errors;
+use crate::{AuctionHouseV2Data, MetadataArgs, ID};
 
 pub fn cmp_bytes(a: &[u8], b: &[u8], size: usize) -> bool {
     sol_memcmp(a, b, size) == 0
@@ -36,4 +38,46 @@ pub fn assert_valid_trade_state(
     ];
     let (derived_trade_state_key, _bump) = Pubkey::find_program_address(&seeds, &ID);
     return cmp_pubkeys(&derived_trade_state_key, trade_state);
+}
+
+/// Computes the hash of the metadata.
+///
+/// The hash is computed as the keccak256 hash of the metadata bytes, which is
+/// then hashed with the `seller_fee_basis_points`.
+pub fn hash_metadata(metadata: &MetadataArgs) -> Result<[u8; 32]> {
+    let hash = keccak::hashv(&[metadata.try_to_vec()?.as_slice()]);
+    // Calculate new data hash.
+    Ok(keccak::hashv(&[
+        &hash.to_bytes(),
+        &metadata.seller_fee_basis_points.to_le_bytes(),
+    ])
+    .to_bytes())
+}
+
+pub fn get_fee_payer<'a, 'b>(
+    auction_house: Box<Account<AuctionHouseV2Data>>,
+    auction_house_fee_account: AccountInfo<'a>,
+    fee_account_seeds: &'b [&'b [u8]],
+    authority: AccountInfo<'a>,
+    seller: AccountInfo<'a>,
+    buyer: AccountInfo<'a>,
+) -> Result<(AccountInfo<'a>, &'b [&'b [u8]])> {
+    let payer: AccountInfo<'a>;
+    let mut seeds: &[&[u8]] = &[];
+    if authority.is_signer {
+        payer = auction_house_fee_account;
+        seeds = fee_account_seeds;
+    } else {
+        if auction_house.requires_sign_off {
+            return Err(AuctionHouseV2Errors::RequireAuctionHouseSignOff.into());
+        }
+        if seller.is_signer {
+            payer = seller;
+        } else if buyer.is_signer {
+            payer = buyer;
+        } else {
+            return Err(AuctionHouseV2Errors::PayerNotProvided.into());
+        }
+    }
+    Ok((payer, seeds))
 }

@@ -2,16 +2,16 @@
 seeds = false
 skip-lint = false
 [programs.Localnet]
-auction_house_v2 = "AHV2WqTNWDjBqY2zv9eUAMHneicckWf5NZxnPJvYxrkA"
+auction_house_v2 = "AHV2XGm1jVAZp3NtwdVyHkbskbxk3oMfn73SXBkejUQb"
 [programs.devnet]
-auction_house_v2 = "AHV2WqTNWDjBqY2zv9eUAMHneicckWf5NZxnPJvYxrkA"
+auction_house_v2 = "AHV2XGm1jVAZp3NtwdVyHkbskbxk3oMfn73SXBkejUQb"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "https://devnet.helius-rpc.com/?api-key=870c3bba-9ced-4913-ad17-e8503b9a93e1"
-wallet = "/Users/athar/.config/solana/id.json"
+wallet = "/Users/athar/Desktop/workspace/personal/Cnft-Market-Place/auction-house-v2/payer.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 js-tests/**/*.ts"

@@ -34,4 +34,10 @@ pub enum AuctionHouseV2Errors {
 
     #[msg("Provided keys don't match")]
     PublicKeyMismatch,
+
+    #[msg("Payer not provided")]
+    PayerNotProvided,
+
+    #[msg("Require auction house to sign off")]
+    RequireAuctionHouseSignOff,
 }
