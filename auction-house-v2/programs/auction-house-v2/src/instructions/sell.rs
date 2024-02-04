@@ -81,22 +81,18 @@ pub fn sell<'b, 'a>(
     nonce: u64,
     index: u32,
 ) -> Result<()> {
-    let auction_house = ctx.accounts.auction_house.to_account_info().clone();
-    let asset_id = ctx.accounts.asset_id.to_account_info().clone();
-    let merkle_tree = ctx.accounts.merke_tree.to_account_info().clone();
-    let owner = ctx.accounts.owner.to_account_info().clone();
-    let previous_leaf_delegate = ctx
-        .accounts
-        .previous_leaf_delegate
-        .to_account_info()
-        .clone();
-    let seller_trade_state_info = ctx.accounts.seller_trade_state.to_account_info().clone();
-    let program_as_signer = ctx.accounts.program_as_signer.to_account_info().clone();
-    let compression_program = ctx.accounts.compression_program.to_account_info().clone();
-    let system_program = ctx.accounts.system_program.to_account_info().clone();
-    let tree_config = ctx.accounts.tree_config.clone();
-    let log_wrapper = ctx.accounts.log_wrapper.to_account_info().clone();
-    let bubblegum_program = ctx.accounts.bubblegum_program.to_account_info().clone();
+    let auction_house = &ctx.accounts.auction_house.to_account_info();
+    let asset_id = &ctx.accounts.asset_id.to_account_info();
+    let merkle_tree = &ctx.accounts.merke_tree.to_account_info();
+    let owner = &ctx.accounts.owner.to_account_info();
+    let previous_leaf_delegate = &ctx.accounts.previous_leaf_delegate.to_account_info();
+    let seller_trade_state_info = &ctx.accounts.seller_trade_state.to_account_info();
+    let program_as_signer = &ctx.accounts.program_as_signer.to_account_info();
+    let compression_program = &ctx.accounts.compression_program.to_account_info();
+    let system_program = &ctx.accounts.system_program.to_account_info();
+    let tree_config = &ctx.accounts.tree_config;
+    let log_wrapper = &ctx.accounts.log_wrapper.to_account_info();
+    let bubblegum_program = &ctx.accounts.bubblegum_program.to_account_info();
     let remaining_accounts = ctx.remaining_accounts;
     let seller_trade_state_bump = ctx
         .bumps

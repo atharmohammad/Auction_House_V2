@@ -106,28 +106,24 @@ pub fn execute_sale<'a>(
     royalty_basis_points: u16,
     metadata: MetadataArgs,
 ) -> Result<()> {
-    let auction_house = ctx.accounts.auction_house.clone();
-    let auction_house_fee_account = ctx
-        .accounts
-        .auction_house_fee_account
-        .to_account_info()
-        .clone();
-    let auction_house_authority = ctx.accounts.auction_house_authority.clone();
-    let merkle_tree_info = ctx.accounts.merke_tree.to_account_info().clone();
-    let seller_info = ctx.accounts.seller.to_account_info().clone();
-    let buyer_info = ctx.accounts.buyer.to_account_info().clone();
-    let treasury_account = ctx.accounts.treasury_account.to_account_info().clone();
-    let seller_trade_state_info = ctx.accounts.seller_trade_state.to_account_info().clone();
-    let buyer_trade_state_info = ctx.accounts.buyer_trade_state.to_account_info().clone();
-    let buyer_escrow = ctx.accounts.buyer_escrow.to_account_info().clone();
-    let program_as_signer_info = ctx.accounts.program_as_signer.to_account_info().clone();
-    let compression_program_info = ctx.accounts.compression_program.to_account_info().clone();
-    let system_program_info = ctx.accounts.system_program.to_account_info().clone();
-    let tree_config_info = ctx.accounts.tree_config.to_account_info().clone();
-    let log_wrapper_info = ctx.accounts.log_wrapper.to_account_info().clone();
-    let auction_house_info = ctx.accounts.auction_house.to_account_info().clone();
-    let bubblegum_program_info = ctx.accounts.bubblegum_program.to_account_info().clone();
-    let remaining_accounts = ctx.remaining_accounts;
+    let auction_house = &ctx.accounts.auction_house;
+    let auction_house_fee_account = &ctx.accounts.auction_house_fee_account.to_account_info();
+    let auction_house_authority = &ctx.accounts.auction_house_authority;
+    let merkle_tree_info = &ctx.accounts.merke_tree.to_account_info();
+    let seller_info = ctx.accounts.seller.to_account_info();
+    let buyer_info = ctx.accounts.buyer.to_account_info();
+    let treasury_account = &ctx.accounts.treasury_account.to_account_info();
+    let seller_trade_state_info = ctx.accounts.seller_trade_state.to_account_info();
+    let buyer_trade_state_info = ctx.accounts.buyer_trade_state.to_account_info();
+    let buyer_escrow = ctx.accounts.buyer_escrow.to_account_info();
+    let program_as_signer_info = &ctx.accounts.program_as_signer.to_account_info();
+    let compression_program_info = &ctx.accounts.compression_program.to_account_info();
+    let system_program_info = ctx.accounts.system_program.to_account_info();
+    let tree_config_info = &ctx.accounts.tree_config.to_account_info();
+    let log_wrapper_info = &ctx.accounts.log_wrapper.to_account_info();
+    let auction_house_info = &ctx.accounts.auction_house.to_account_info();
+    let bubblegum_program_info = &ctx.accounts.bubblegum_program.to_account_info();
+    let remaining_accounts = &ctx.remaining_accounts;
 
     let hashed_metadata = hash_metadata(&metadata)?;
     if !cmp_bytes(&data_hash, &hashed_metadata, 32) {
@@ -167,7 +163,7 @@ pub fn execute_sale<'a>(
         auction_house.clone(),
         auction_house_fee_account.clone(),
         &auction_house_fee_payer_seeds,
-        auction_house_authority,
+        auction_house_authority.clone(),
         seller_info.clone(),
         buyer_info.clone(),
     )?;

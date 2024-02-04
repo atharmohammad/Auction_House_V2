@@ -52,14 +52,14 @@ pub struct BidInstruction<'info> {
 }
 
 pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
-    let auction_house = ctx.accounts.auction_house.to_account_info().clone();
-    let _treasury_mint = ctx.accounts.treasury_mint.to_account_info().clone();
-    let bidder = ctx.accounts.bidder.to_account_info().clone();
-    let asset_id = ctx.accounts.asset_id.to_account_info().clone();
-    let buyer_escrow = ctx.accounts.buyer_escrow.to_account_info().clone();
-    let buyer_trade_state_info = ctx.accounts.buyer_trade_state.to_account_info().clone();
-    let system_program = ctx.accounts.system_program.to_account_info().clone();
-    let rent = ctx.accounts.rent.clone();
+    let auction_house = ctx.accounts.auction_house.to_account_info();
+    let _treasury_mint = ctx.accounts.treasury_mint.to_account_info();
+    let bidder = ctx.accounts.bidder.to_account_info();
+    let asset_id = ctx.accounts.asset_id.to_account_info();
+    let buyer_escrow = ctx.accounts.buyer_escrow.to_account_info();
+    let buyer_trade_state_info = ctx.accounts.buyer_trade_state.to_account_info();
+    let system_program = ctx.accounts.system_program.to_account_info();
+    let rent = &ctx.accounts.rent;
     let buyer_trade_state_bump = ctx
         .bumps
         .get("buyer_trade_state")
@@ -83,9 +83,11 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
             return Err(AuctionHouseV2Errors::NotEnoughFunds)?;
         }
 
-        let from = bidder.to_account_info().clone();
-        let to = buyer_escrow.to_account_info().clone();
-        let transfer_instruction_accounts = [from, to, system_program.to_account_info()];
+        let transfer_instruction_accounts = [
+            bidder.to_account_info(),
+            buyer_escrow.to_account_info(),
+            system_program.to_account_info(),
+        ];
         let transfer_instruction = transfer(bidder.key, buyer_escrow.key, required_funds);
         invoke(&transfer_instruction, &transfer_instruction_accounts)?;
     }

@@ -73,10 +73,10 @@ pub fn cancel<'a>(
     nonce: u64,
     index: u32,
 ) -> Result<()> {
-    let auction_house = ctx.accounts.auction_house.to_account_info().clone();
-    let wallet = ctx.accounts.wallet.to_account_info().clone();
-    let trade_state_info = ctx.accounts.trade_state.to_account_info().clone();
-    let asset_id = ctx.accounts.asset_id.to_account_info().clone();
+    let auction_house = ctx.accounts.auction_house.to_account_info();
+    let wallet = ctx.accounts.wallet.to_account_info();
+    let trade_state_info = ctx.accounts.trade_state.to_account_info();
+    let asset_id = ctx.accounts.asset_id.to_account_info();
     let remaining_accounts = &mut ctx.remaining_accounts.iter();
 
     if trade_state_info.data_is_empty() {
