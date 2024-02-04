@@ -61,6 +61,7 @@ pub fn create(
     auction_house.seller_fee_basis_points = seller_fee_basis_points;
     auction_house.authority = ctx.accounts.authority.key();
     auction_house.requires_sign_off = requires_sign_off;
+    auction_house.treasury_account = ctx.accounts.treasury_account.key();
 
     Ok(())
 }
