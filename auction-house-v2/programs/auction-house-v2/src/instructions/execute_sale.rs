@@ -134,11 +134,14 @@ pub fn execute_sale<'a>(
         return Err(AuctionHouseV2Errors::MetadataHashMismatch.into());
     }
 
-    if buyer_trade_state_info.data_is_empty() {
+    if buyer_trade_state_info.data_is_empty() || (buyer_trade_state_info.try_borrow_data()?[0] == 0)
+    {
         return Err(AuctionHouseV2Errors::InvalidBuyerTradeState.into());
     }
 
-    if seller_trade_state_info.data_is_empty() {
+    if seller_trade_state_info.data_is_empty()
+        || (seller_trade_state_info.try_borrow_data()?[0] == 0)
+    {
         return Err(AuctionHouseV2Errors::BothPartiesNeedToAgreeToSale.into());
     }
 
