@@ -1,7 +1,9 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::keccak;
+use anchor_lang::solana_program::{keccak, program::invoke_signed, program_pack::Pack};
 use anchor_lang::{solana_program::program_memory::sol_memcmp, system_program};
+use anchor_spl::token::spl_token::instruction::initialize_account3;
 use anchor_spl::token_interface::spl_token_2022::cmp_pubkeys;
+use mpl_utils::create_or_allocate_account_raw;
 
 use crate::constants::TRADE_STATE;
 use crate::errors::AuctionHouseV2Errors;
@@ -20,6 +22,37 @@ pub fn close<'info>(info: AccountInfo<'info>, sol_destination: AccountInfo<'info
 
     info.assign(&system_program::ID);
     info.realloc(0, false).map_err(Into::into)
+}
+
+pub fn create_program_associated_token_account<'info>(
+    account: AccountInfo<'info>,
+    payer: AccountInfo<'info>,
+    wallet: AccountInfo<'info>,
+    mint: AccountInfo<'info>,
+    system_program: AccountInfo<'info>,
+    token_program: AccountInfo<'info>,
+    account_seeds: &[&[u8]],
+) -> Result<()> {
+    create_or_allocate_account_raw(
+        token_program.key(),
+        &account,
+        &system_program,
+        &payer,
+        spl_token::state::Account::LEN,
+        account_seeds,
+    )?;
+    let initialize_token_account_instruction = initialize_account3(
+        &token_program.key(),
+        &account.key(),
+        &mint.key(),
+        &wallet.key(),
+    )?;
+    invoke_signed(
+        &initialize_token_account_instruction,
+        &[token_program, account, system_program, mint, wallet],
+        &[account_seeds],
+    )?;
+    Ok(())
 }
 
 pub fn assert_valid_trade_state(

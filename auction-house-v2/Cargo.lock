@@ -583,6 +583,8 @@ dependencies = [
  "solana-program",
  "solana-program-test",
  "solana-sdk",
+ "spl-associated-token-account 2.2.0",
+ "spl-token 4.0.0",
  "strum",
  "strum_macros",
  "tokio",

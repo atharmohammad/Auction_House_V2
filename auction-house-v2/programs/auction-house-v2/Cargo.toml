@@ -21,6 +21,8 @@ borsh = ">= 0.9"
 mpl-bubblegum="1.0.0"
 winnow="=0.4.1"
 anchor-spl = "0.28.0"
+spl-token = { version = "4.0.0",  features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "2.0.0",  features = ["no-entrypoint"] }
 strum = "0.24"
 strum_macros = "0.24"
 mpl-utils = { version = "0.3.1" }
