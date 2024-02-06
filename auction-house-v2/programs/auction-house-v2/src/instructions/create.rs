@@ -87,11 +87,11 @@ pub fn create(
     if !is_native {
         let treasury_seeds = [TREASURY.as_bytes(), auction_house_key.as_ref()];
         create_program_associated_token_account(
-            treasury_account.to_account_info(),
-            payer.to_account_info(),
+            &treasury_account.to_account_info(),
+            &payer.to_account_info(),
             auction_house.to_account_info(),
             treasury_mint.to_account_info(),
-            system_program.to_account_info(),
+            &system_program.to_account_info(),
             token_program.to_account_info(),
             &treasury_seeds,
         )?;

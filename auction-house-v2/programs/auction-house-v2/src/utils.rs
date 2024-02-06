@@ -25,11 +25,11 @@ pub fn close<'info>(info: AccountInfo<'info>, sol_destination: AccountInfo<'info
 }
 
 pub fn create_program_associated_token_account<'info>(
-    account: AccountInfo<'info>,
-    payer: AccountInfo<'info>,
+    account: &AccountInfo<'info>,
+    payer: &AccountInfo<'info>,
     wallet: AccountInfo<'info>,
     mint: AccountInfo<'info>,
-    system_program: AccountInfo<'info>,
+    system_program: &AccountInfo<'info>,
     token_program: AccountInfo<'info>,
     account_seeds: &[&[u8]],
 ) -> Result<()> {
@@ -49,7 +49,13 @@ pub fn create_program_associated_token_account<'info>(
     )?;
     invoke_signed(
         &initialize_token_account_instruction,
-        &[token_program, account, system_program, mint, wallet],
+        &[
+            token_program,
+            account.clone(),
+            system_program.clone(),
+            mint,
+            wallet,
+        ],
         &[account_seeds],
     )?;
     Ok(())
