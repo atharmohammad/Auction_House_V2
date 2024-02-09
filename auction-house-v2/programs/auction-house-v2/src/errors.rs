@@ -43,4 +43,7 @@ pub enum AuctionHouseV2Errors {
 
     #[msg("Require auction house to sign off")]
     RequireAuctionHouseSignOff,
+
+    #[msg("Seller token account cannot have delegate")]
+    SellerTokenAccountCannotHaveDelegate,
 }

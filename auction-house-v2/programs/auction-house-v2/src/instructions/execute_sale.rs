@@ -1,12 +1,13 @@
-use crate::utils::{close, get_fee_payer, hash_metadata};
+use crate::utils::{check_if_ata_valid, close, get_fee_payer, hash_metadata};
 use crate::MetadataArgs;
 use crate::{
     constants::*, errors::AuctionHouseV2Errors, state::AuctionHouseV2Data, utils::cmp_bytes,
 };
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_lang::{prelude::*, solana_program::system_instruction::transfer};
-use anchor_spl::token::Mint;
+use anchor_spl::token::{Mint, Token};
 use mpl_bubblegum::instructions::TransferCpiBuilder;
+use spl_associated_token_account::instruction::create_associated_token_account;
 
 #[derive(Accounts)]
 #[instruction(buyer_price:u64)]
@@ -29,6 +30,10 @@ pub struct ExecuteSaleInstruction<'info> {
     /// CHECK: verified in seller_trade_state seeds constraints
     #[account(mut)]
     pub seller: AccountInfo<'info>,
+
+    /// CHECK: verified in the logic
+    #[account(mut)]
+    pub seller_receipt_account: AccountInfo<'info>,
 
     /// CHECK: mutated in downstream program
     #[account(mut)]
@@ -87,6 +92,8 @@ pub struct ExecuteSaleInstruction<'info> {
 
     pub system_program: Program<'info, System>,
 
+    pub token_program: Program<'info, Token>,
+
     /// CHECK: Verified in CPI
     pub log_wrapper: UncheckedAccount<'info>,
     /* Remaining Accounts
@@ -113,6 +120,7 @@ pub fn execute_sale<'a>(
     let seller_info = ctx.accounts.seller.to_account_info();
     let buyer_info = ctx.accounts.buyer.to_account_info();
     let treasury_account = &ctx.accounts.treasury_account.to_account_info();
+    let treasury_mint = &ctx.accounts.treasury_mint;
     let seller_trade_state_info = ctx.accounts.seller_trade_state.to_account_info();
     let buyer_trade_state_info = ctx.accounts.buyer_trade_state.to_account_info();
     let buyer_escrow = ctx.accounts.buyer_escrow.to_account_info();
@@ -123,6 +131,8 @@ pub fn execute_sale<'a>(
     let log_wrapper_info = &ctx.accounts.log_wrapper.to_account_info();
     let auction_house_info = &ctx.accounts.auction_house.to_account_info();
     let bubblegum_program_info = &ctx.accounts.bubblegum_program.to_account_info();
+    let seller_receipt_info = &ctx.accounts.seller_receipt_account.to_account_info();
+    let token_program = &ctx.accounts.token_program;
     let remaining_accounts = &ctx.remaining_accounts;
 
     let hashed_metadata = hash_metadata(&metadata)?;
@@ -146,6 +156,17 @@ pub fn execute_sale<'a>(
         return Err(AuctionHouseV2Errors::NotEnoughFunds.into());
     }
 
+    let treasury_mint_key = treasury_mint.key();
+    let auction_house_authority_key = auction_house_authority.key();
+    let is_native = treasury_mint_key == spl_token::native_mint::id();
+
+    let auction_house_seeds = [
+        AUCTION_HOUSE.as_ref(),
+        auction_house_authority_key.as_ref(),
+        treasury_mint_key.as_ref(),
+        &[auction_house.bump],
+    ];
+
     let auction_house_fee_account_bump = ctx
         .bumps
         .get("auction_house_fee_account")
@@ -158,8 +179,8 @@ pub fn execute_sale<'a>(
         &[*auction_house_fee_account_bump],
     ];
 
-    //TODO: Use this fee payer for creating token accounts in non native auction house
-    let (_fee_payer, _fee_payer_seeds) = get_fee_payer(
+    // Use this fee payer for creating token accounts in non native auction house
+    let (fee_payer, fee_payer_seeds) = get_fee_payer(
         auction_house.clone(),
         auction_house_fee_account.clone(),
         &auction_house_fee_payer_seeds,
@@ -191,8 +212,7 @@ pub fn execute_sale<'a>(
         &[*program_as_signer_bump],
     ];
 
-    let creators = metadata.creators;
-    let (creators_path, proof_path) = remaining_accounts.split_at(creators.len());
+    let remaining_accounts_iter = &mut remaining_accounts.iter();
 
     // pay auction house fees
     let auction_house_fees = buyer_price
@@ -201,19 +221,41 @@ pub fn execute_sale<'a>(
         .checked_div(10000)
         .unwrap();
 
-    let pay_to_auction_house_instruction =
-        transfer(buyer_escrow.key, treasury_account.key, auction_house_fees);
+    if is_native {
+        let pay_to_auction_house_instruction =
+            transfer(buyer_escrow.key, treasury_account.key, auction_house_fees);
 
-    let pay_to_auction_house_accounts = [
-        buyer_escrow.clone(),
-        treasury_account.clone(),
-        system_program_info.clone(),
-    ];
-    invoke_signed(
-        &pay_to_auction_house_instruction,
-        &pay_to_auction_house_accounts,
-        &[&buyer_escrow_signer_seeds],
-    )?;
+        let pay_to_auction_house_accounts = [
+            buyer_escrow.clone(),
+            treasury_account.clone(),
+            system_program_info.clone(),
+        ];
+        invoke_signed(
+            &pay_to_auction_house_instruction,
+            &pay_to_auction_house_accounts,
+            &[&buyer_escrow_signer_seeds],
+        )?;
+    } else {
+        let pay_to_auction_house_instruction = spl_token::instruction::transfer(
+            token_program.key,
+            buyer_escrow.key,
+            auction_house_fee_account.key,
+            &auction_house_key,
+            &[],
+            auction_house_fees,
+        )?;
+        let pay_to_auction_house_accounts = [
+            token_program.to_account_info(),
+            buyer_escrow.clone(),
+            auction_house.to_account_info(),
+            auction_house_fee_account.clone(),
+        ];
+        invoke_signed(
+            &pay_to_auction_house_instruction,
+            &pay_to_auction_house_accounts,
+            &[&auction_house_seeds],
+        )?;
+    }
 
     // pay creator royalties
     let mut remaining_buyer_funds = buyer_price.checked_sub(auction_house_fees).unwrap();
@@ -222,25 +264,156 @@ pub fn execute_sale<'a>(
         .unwrap()
         .checked_div(10000)
         .unwrap();
-    let creator_iter = &mut creators_path.iter();
-    for creator in creators.iter() {
-        let share = creator_royalties
-            .checked_mul(creator.share.into())
-            .unwrap()
-            .checked_div(100)
-            .unwrap();
-        remaining_buyer_funds = remaining_buyer_funds.checked_sub(share).unwrap();
-        let creator_info = next_account_info(creator_iter)?;
-        let pay_to_creator_instruction = transfer(buyer_escrow.key, &creator.address, share);
-        let pay_to_creator_accounts = [
-            buyer_escrow.clone(),
-            creator_info.clone(),
+
+    if !metadata.creators.is_empty() {
+        for creator in metadata.creators.iter() {
+            let share = creator_royalties
+                .checked_mul(creator.share.into())
+                .unwrap()
+                .checked_div(100)
+                .unwrap();
+            remaining_buyer_funds = remaining_buyer_funds.checked_sub(share).unwrap();
+
+            let creator_info = next_account_info(remaining_accounts_iter)?;
+            if is_native {
+                if share > 0 {
+                    let pay_to_creator_instruction =
+                        transfer(buyer_escrow.key, &creator.address, share);
+                    let pay_to_creator_accounts = [
+                        buyer_escrow.clone(),
+                        creator_info.clone(),
+                        system_program_info.clone(),
+                    ];
+                    invoke_signed(
+                        &pay_to_creator_instruction,
+                        &pay_to_creator_accounts,
+                        &[&buyer_escrow_signer_seeds],
+                    )?;
+                }
+            } else {
+                let creator_token_account = next_account_info(remaining_accounts_iter)?;
+                if share > 0 {
+                    if creator_token_account.data_is_empty() {
+                        let create_ata_instruction = create_associated_token_account(
+                            fee_payer.key,
+                            creator_info.key,
+                            &treasury_mint_key,
+                            token_program.key,
+                        );
+                        let fee_payer_seeds = [fee_payer_seeds];
+                        let fee_signer_seeds: &[&[&[u8]]] = if fee_payer_seeds.is_empty() {
+                            &[]
+                        } else {
+                            &fee_payer_seeds
+                        };
+                        invoke_signed(
+                            &create_ata_instruction,
+                            &[
+                                fee_payer.clone(),
+                                creator_info.clone(),
+                                treasury_mint.to_account_info(),
+                                token_program.to_account_info(),
+                            ],
+                            fee_signer_seeds,
+                        )?;
+                    }
+                    check_if_ata_valid(
+                        creator_token_account,
+                        &creator_info.key(),
+                        &treasury_mint_key,
+                    )?;
+
+                    // transfer royalty tokens to creator token account
+                    let pay_to_creator_instruction = spl_token::instruction::transfer(
+                        token_program.key,
+                        buyer_escrow.key,
+                        creator_token_account.key,
+                        &auction_house_key,
+                        &[],
+                        share,
+                    )?;
+                    let pay_to_creator_accounts = [
+                        token_program.to_account_info(),
+                        buyer_escrow.clone(),
+                        auction_house.to_account_info(),
+                        creator_token_account.clone(),
+                    ];
+                    invoke_signed(
+                        &pay_to_creator_instruction,
+                        &pay_to_creator_accounts,
+                        &[&auction_house_seeds],
+                    )?;
+                }
+            }
+        }
+    }
+
+    // transfer funds to seller
+    if is_native {
+        let pay_to_seller_instruction =
+            transfer(buyer_escrow.key, seller_info.key, remaining_buyer_funds);
+        let pay_to_seller_accounts = [
+            buyer_escrow,
+            seller_info.clone(),
             system_program_info.clone(),
         ];
         invoke_signed(
-            &pay_to_creator_instruction,
-            &pay_to_creator_accounts,
+            &pay_to_seller_instruction,
+            &pay_to_seller_accounts,
             &[&buyer_escrow_signer_seeds],
+        )?;
+    } else {
+        if seller_receipt_info.data_is_empty() {
+            let create_ata_instruction = create_associated_token_account(
+                fee_payer.key,
+                seller_info.key,
+                &treasury_mint_key,
+                token_program.key,
+            );
+            let fee_payer_seeds = [fee_payer_seeds];
+            let fee_signer_seeds: &[&[&[u8]]] = if fee_payer_seeds.is_empty() {
+                &[]
+            } else {
+                &fee_payer_seeds
+            };
+            invoke_signed(
+                &create_ata_instruction,
+                &[
+                    fee_payer.clone(),
+                    seller_info.clone(),
+                    treasury_mint.to_account_info(),
+                    token_program.to_account_info(),
+                ],
+                fee_signer_seeds,
+            )?;
+        }
+
+        let loaded_seller_token_account =
+            check_if_ata_valid(&seller_receipt_info, seller_info.key, &treasury_mint_key)?;
+
+        // check if seller token account have a delegate
+        if loaded_seller_token_account.delegate.is_some() {
+            return Err(AuctionHouseV2Errors::SellerTokenAccountCannotHaveDelegate.into());
+        }
+
+        let pay_to_seller_instruction = spl_token::instruction::transfer(
+            token_program.key,
+            buyer_escrow.key,
+            seller_receipt_info.key,
+            &auction_house_key,
+            &[],
+            remaining_buyer_funds,
+        )?;
+        let pay_to_seller_accounts = [
+            token_program.to_account_info(),
+            buyer_escrow.clone(),
+            auction_house.to_account_info(),
+            seller_receipt_info.clone(),
+        ];
+        invoke_signed(
+            &pay_to_seller_instruction,
+            &pay_to_seller_accounts,
+            &[&auction_house_seeds],
         )?;
     }
 
@@ -261,20 +434,10 @@ pub fn execute_sale<'a>(
         .nonce(nonce)
         .index(index);
 
-    for info in proof_path {
+    for info in remaining_accounts_iter {
         transfer_nft_to_buyer_builder.add_remaining_account(info, false, false);
     }
     transfer_nft_to_buyer_builder.invoke_signed(&[&program_as_signer_seeds])?;
-
-    // transfer funds to seller
-    let transfer_to_seller_instruction =
-        transfer(buyer_escrow.key, seller_info.key, remaining_buyer_funds);
-    let transfer_to_seller_accounts = [buyer_escrow, seller_info.clone(), system_program_info];
-    invoke_signed(
-        &transfer_to_seller_instruction,
-        &transfer_to_seller_accounts,
-        &[&buyer_escrow_signer_seeds],
-    )?;
 
     // close trade states
     close(seller_trade_state_info, seller_info)?;

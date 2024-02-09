@@ -1,5 +1,9 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::{keccak, program::invoke_signed, program_pack::Pack};
+use anchor_lang::solana_program::{
+    keccak,
+    program::invoke_signed,
+    program_pack::{IsInitialized, Pack},
+};
 use anchor_lang::{solana_program::program_memory::sol_memcmp, system_program};
 use anchor_spl::token::spl_token::instruction::initialize_account3;
 use anchor_spl::token_interface::spl_token_2022::cmp_pubkeys;
@@ -11,6 +15,23 @@ use crate::{AuctionHouseV2Data, MetadataArgs, ID};
 
 pub fn cmp_bytes(a: &[u8], b: &[u8], size: usize) -> bool {
     sol_memcmp(a, b, size) == 0
+}
+
+pub fn check_if_ata_valid(
+    token_account: &AccountInfo,
+    wallet: &Pubkey,
+    mint: &Pubkey,
+) -> Result<spl_token::state::Account> {
+    let loaded_token_account = spl_token::state::Account::unpack(&token_account.data.borrow_mut())?;
+    if !loaded_token_account.is_initialized() {
+        return Err(AuctionHouseV2Errors::AccountNotInitialized.into());
+    }
+    if !cmp_pubkeys(&loaded_token_account.owner, wallet)
+        || !cmp_pubkeys(&loaded_token_account.mint, mint)
+    {
+        return Err(AuctionHouseV2Errors::PublicKeyMismatch.into());
+    }
+    Ok(loaded_token_account)
 }
 
 pub fn close<'info>(info: AccountInfo<'info>, sol_destination: AccountInfo<'info>) -> Result<()> {
@@ -105,7 +126,7 @@ pub fn get_fee_payer<'a, 'b>(
     let mut seeds: &[&[u8]] = &[];
     if authority.is_signer {
         payer = auction_house_fee_account;
-        seeds = fee_account_seeds;
+        seeds = &fee_account_seeds;
     } else {
         if auction_house.requires_sign_off {
             return Err(AuctionHouseV2Errors::RequireAuctionHouseSignOff.into());
