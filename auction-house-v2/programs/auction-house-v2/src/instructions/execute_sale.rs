@@ -294,6 +294,7 @@ pub fn execute_sale<'a>(
                 let creator_token_account = next_account_info(remaining_accounts_iter)?;
                 if share > 0 {
                     if creator_token_account.data_is_empty() {
+                        // create current creator token account if not initialised
                         let create_ata_instruction = create_associated_token_account(
                             fee_payer.key,
                             creator_info.key,
@@ -363,6 +364,7 @@ pub fn execute_sale<'a>(
             &[&buyer_escrow_signer_seeds],
         )?;
     } else {
+        // create seller receipt ATA
         if seller_receipt_info.data_is_empty() {
             let create_ata_instruction = create_associated_token_account(
                 fee_payer.key,

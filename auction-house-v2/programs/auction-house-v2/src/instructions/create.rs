@@ -1,7 +1,7 @@
 use crate::constants::*;
 use crate::errors::AuctionHouseV2Errors;
 use crate::state::AuctionHouseV2Data;
-use crate::utils::create_program_associated_token_account;
+use crate::utils::{check_if_ata_valid, create_program_associated_token_account};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
 use anchor_spl::token::spl_token::native_mint;
@@ -25,6 +25,9 @@ pub struct CreateInstruction<'info> {
 
     /// CHECK: User can use whatever they want for intialization.
     pub treasury_withdrawal_account: UncheckedAccount<'info>,
+
+    /// CHECK: User can use whatever they want for initialization
+    pub treasury_withdrawal_owner: UncheckedAccount<'info>,
 
     /// CHECK: User can use whatever they want for intialization.
     #[account(seeds=[FEE.as_bytes(),auction_house.key().as_ref()],bump)]
@@ -57,6 +60,7 @@ pub fn create(
     let system_program = &ctx.accounts.system_program;
     let token_program = &ctx.accounts.token_program;
     let treasury_withdrawal_account = &ctx.accounts.treasury_withdrawal_account;
+    let treasury_withdrawal_owner = &ctx.accounts.treasury_withdrawal_owner;
     let auction_house_key = auction_house.key().clone();
 
     auction_house.bump = *ctx
@@ -85,6 +89,7 @@ pub fn create(
 
     let is_native = ctx.accounts.treasury_mint.key() == native_mint::id();
     if !is_native {
+        // initialize treasury account as token account
         let treasury_seeds = [TREASURY.as_bytes(), auction_house_key.as_ref()];
         create_program_associated_token_account(
             &treasury_account.to_account_info(),
@@ -95,10 +100,12 @@ pub fn create(
             token_program.to_account_info(),
             &treasury_seeds,
         )?;
+
+        // Create treasury withdrawal ATA
         if treasury_withdrawal_account.data_is_empty() {
             let create_ata_instruction = create_associated_token_account(
                 payer.key,
-                treasury_withdrawal_account.key,
+                treasury_withdrawal_owner.key,
                 treasury_mint.key,
                 token_program.key,
             );
@@ -110,6 +117,11 @@ pub fn create(
                     treasury_mint.to_account_info(),
                     token_program.to_account_info(),
                 ],
+            )?;
+            check_if_ata_valid(
+                treasury_withdrawal_account,
+                treasury_withdrawal_owner.key,
+                treasury_mint.key,
             )?;
         }
     }

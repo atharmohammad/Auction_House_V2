@@ -36,6 +36,7 @@ async fn create_native_auction_house() {
         authority: payer_pubkey,
         treasury_mint,
         treasury_withdrawal_account: withdrawal_account.pubkey(),
+        treasury_withdrawal_owner: payer_pubkey,
         treasury_account,
         fee_account,
         fee_withdrawal_account: withdrawal_account.pubkey(),
