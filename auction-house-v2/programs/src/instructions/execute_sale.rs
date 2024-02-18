@@ -236,7 +236,7 @@ pub fn execute_sale<'a>(
         let pay_to_auction_house_instruction = spl_token::instruction::transfer(
             token_program.key,
             buyer_escrow.key,
-            auction_house_fee_account.key,
+            treasury_account.key,
             &auction_house_key,
             &[],
             auction_house_fees,
@@ -245,7 +245,7 @@ pub fn execute_sale<'a>(
             token_program.to_account_info(),
             buyer_escrow.clone(),
             auction_house.to_account_info(),
-            auction_house_fee_account.clone(),
+            treasury_account.clone(),
         ];
         invoke_signed(
             &pay_to_auction_house_instruction,

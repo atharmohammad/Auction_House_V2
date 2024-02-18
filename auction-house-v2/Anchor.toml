@@ -8,6 +8,9 @@ auction_house_v2 = "AHV2XGm1jVAZp3NtwdVyHkbskbxk3oMfn73SXBkejUQb"
 
 [workspace]
 types = "../sdk/idl"
+members = [
+  "programs",
+]
 
 [registry]
 url = "https://api.apr.dev"
