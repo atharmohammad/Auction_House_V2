@@ -167,16 +167,13 @@ pub fn execute_sale<'a>(
         &[auction_house.bump],
     ];
 
-    let auction_house_fee_account_bump = ctx
-        .bumps
-        .get("auction_house_fee_account")
-        .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
+    let auction_house_fee_account_bump = auction_house.bump;
 
     let auction_house_key = auction_house.key();
     let auction_house_fee_payer_seeds = [
         FEE.as_bytes(),
         auction_house_key.as_ref(),
-        &[*auction_house_fee_account_bump],
+        &[auction_house_fee_account_bump],
     ];
 
     // Use this fee payer for creating token accounts in non native auction house
