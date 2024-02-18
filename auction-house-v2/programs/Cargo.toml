@@ -6,7 +6,6 @@ edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "auction_house_v2"
 
 [features]
 no-entrypoint = []
