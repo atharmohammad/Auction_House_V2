@@ -1,9 +1,30 @@
 {   
     "version": "1.0.0",
+    "programVersion": "1.0.0",
+    "description": "SDK for Auction House V2",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "scripts": {
         "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
-        "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+        "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+        "build": "npx rimraf ./dist && tsc -p tsconfig.json"
     },
+    "files": [
+        "./dist"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
+    "keywords": [
+        "cnft",
+        "compression",
+        "solana",
+        "auction",
+        "auction house",
+        "metaplex",
+        "marketplace"
+    ],
     "author": "Mohd Athar <mohd.rule123@gmail.com>",
     "license": "Apache-2.0",
     "dependencies": {
