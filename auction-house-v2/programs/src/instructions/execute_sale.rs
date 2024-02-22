@@ -5,6 +5,7 @@ use crate::{
 };
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_lang::{prelude::*, solana_program::system_instruction::transfer};
+use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, Token};
 use mpl_bubblegum::instructions::TransferCpiBuilder;
 use spl_associated_token_account::instruction::create_associated_token_account;
@@ -94,6 +95,8 @@ pub struct ExecuteSaleInstruction<'info> {
 
     pub token_program: Program<'info, Token>,
 
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
     /// CHECK: Verified in CPI
     pub log_wrapper: UncheckedAccount<'info>,
     /* Remaining Accounts
@@ -133,6 +136,7 @@ pub fn execute_sale<'a>(
     let bubblegum_program_info = &ctx.accounts.bubblegum_program.to_account_info();
     let seller_receipt_info = &ctx.accounts.seller_receipt_account.to_account_info();
     let token_program = &ctx.accounts.token_program;
+    let associated_token_program = &ctx.accounts.associated_token_program;
     let remaining_accounts = &ctx.remaining_accounts;
 
     let hashed_metadata = hash_metadata(&metadata)?;
@@ -311,6 +315,8 @@ pub fn execute_sale<'a>(
                                 creator_info.clone(),
                                 treasury_mint.to_account_info(),
                                 token_program.to_account_info(),
+                                creator_token_account.to_account_info(),
+                                associated_token_program.to_account_info(),
                             ],
                             fee_signer_seeds,
                         )?;
@@ -382,6 +388,8 @@ pub fn execute_sale<'a>(
                     seller_info.clone(),
                     treasury_mint.to_account_info(),
                     token_program.to_account_info(),
+                    seller_receipt_info.to_account_info(),
+                    associated_token_program.to_account_info(),
                 ],
                 fee_signer_seeds,
             )?;

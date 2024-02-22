@@ -69,7 +69,7 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
     let buyer_escrow = &ctx.accounts.buyer_escrow.to_account_info();
     let buyer_trade_state_info = ctx.accounts.buyer_trade_state.to_account_info();
     let system_program = &ctx.accounts.system_program.to_account_info();
-    let token_program = ctx.accounts.token_program.to_account_info();
+    let token_program = &ctx.accounts.token_program;
     let payment_account = ctx.accounts.payment_account.to_account_info();
     let rent = &ctx.accounts.rent;
     let buyer_trade_state_bump = ctx
@@ -79,6 +79,10 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
     let auction_house_key = auction_house.key();
     let token_program_key = token_program.key();
     let bidder_key = bidder.key();
+    let buyer_escrow_bump = ctx
+        .bumps
+        .get("buyer_escrow")
+        .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
 
     let is_native = treasury_mint.key() == spl_token::native_mint::ID;
 
@@ -115,6 +119,7 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
             ESCROW.as_ref(),
             auction_house_key.as_ref(),
             bidder_key.as_ref(),
+            &[*buyer_escrow_bump],
         ];
         create_program_associated_token_account(
             buyer_escrow,
@@ -122,7 +127,7 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
             auction_house,
             treasury_mint,
             system_program,
-            token_program,
+            token_program.to_account_info(),
             &escrow_signer_seeds,
         )?;
 
@@ -140,6 +145,8 @@ pub fn bid(ctx: Context<BidInstruction>, buyer_price: u64) -> Result<()> {
             let transfer_instruction_accounts = [
                 bidder.to_account_info(),
                 buyer_escrow.to_account_info(),
+                token_program.to_account_info(),
+                payment_account.to_account_info(),
                 system_program.to_account_info(),
             ];
             let transfer_instruction = spl_token::instruction::transfer(

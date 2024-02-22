@@ -4,6 +4,7 @@ use crate::state::AuctionHouseV2Data;
 use crate::utils::{check_if_ata_valid, create_program_associated_token_account};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
+use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::Token;
 use spl_associated_token_account::instruction::create_associated_token_account;
@@ -20,10 +21,11 @@ pub struct CreateInstruction<'info> {
     pub treasury_mint: UncheckedAccount<'info>,
 
     /// CHECK: User can use whatever they want for intialization.
-    #[account(seeds=[TREASURY.as_bytes(),auction_house.key().as_ref()],bump)]
+    #[account(mut,seeds=[TREASURY.as_bytes(),auction_house.key().as_ref()],bump)]
     pub treasury_account: UncheckedAccount<'info>,
 
     /// CHECK: User can use whatever they want for intialization.
+    #[account(mut)]
     pub treasury_withdrawal_account: UncheckedAccount<'info>,
 
     /// CHECK: User can use whatever they want for initialization
@@ -42,6 +44,8 @@ pub struct CreateInstruction<'info> {
     pub system_program: Program<'info, System>,
 
     pub token_program: Program<'info, Token>,
+
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 pub fn create(
@@ -61,6 +65,7 @@ pub fn create(
     let token_program = &ctx.accounts.token_program;
     let treasury_withdrawal_account = &ctx.accounts.treasury_withdrawal_account;
     let treasury_withdrawal_owner = &ctx.accounts.treasury_withdrawal_owner;
+    let associated_token_program = &ctx.accounts.associated_token_program;
     let auction_house_key = auction_house.key().clone();
 
     auction_house.bump = *ctx
@@ -73,11 +78,12 @@ pub fn create(
         .get("fee_account")
         .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
 
-    auction_house.treasury_bump = *ctx
+    let treasury_bump = *ctx
         .bumps
         .get("treasury_account")
         .ok_or(AuctionHouseV2Errors::BumpSeedNotInHashMap)?;
 
+    auction_house.treasury_bump = treasury_bump;
     auction_house.fee_account = ctx.accounts.fee_account.key();
     auction_house.fee_withdrawal_account = ctx.accounts.fee_withdrawal_account.key();
     auction_house.treasury_withdrawal_account = ctx.accounts.treasury_withdrawal_account.key();
@@ -90,7 +96,11 @@ pub fn create(
     let is_native = ctx.accounts.treasury_mint.key() == native_mint::id();
     if !is_native {
         // initialize treasury account as token account
-        let treasury_seeds = [TREASURY.as_bytes(), auction_house_key.as_ref()];
+        let treasury_seeds = [
+            TREASURY.as_bytes(),
+            auction_house_key.as_ref(),
+            &[treasury_bump],
+        ];
         create_program_associated_token_account(
             &treasury_account.to_account_info(),
             &payer.to_account_info(),
@@ -113,9 +123,12 @@ pub fn create(
                 &create_ata_instruction,
                 &[
                     payer.to_account_info(),
+                    treasury_withdrawal_owner.to_account_info(),
                     treasury_withdrawal_account.to_account_info(),
                     treasury_mint.to_account_info(),
                     token_program.to_account_info(),
+                    system_program.to_account_info(),
+                    associated_token_program.to_account_info(),
                 ],
             )?;
             check_if_ata_valid(

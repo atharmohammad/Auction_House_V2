@@ -41,6 +41,7 @@ async fn create_native_auction_house() {
         fee_account,
         fee_withdrawal_account: withdrawal_account.pubkey(),
         payer: payer.pubkey(),
+        associated_token_program: spl_associated_token_account::ID,
         system_program: system_program::ID,
         token_program: spl_token::ID,
     }
