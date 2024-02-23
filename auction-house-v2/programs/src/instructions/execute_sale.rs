@@ -129,7 +129,7 @@ pub fn execute_sale<'a>(
     let buyer_escrow = ctx.accounts.buyer_escrow.to_account_info();
     let program_as_signer_info = &ctx.accounts.program_as_signer.to_account_info();
     let compression_program_info = &ctx.accounts.compression_program.to_account_info();
-    let system_program_info = ctx.accounts.system_program.to_account_info();
+    let system_program = &ctx.accounts.system_program;
     let tree_config_info = &ctx.accounts.tree_config.to_account_info();
     let log_wrapper_info = &ctx.accounts.log_wrapper.to_account_info();
     let auction_house_info = &ctx.accounts.auction_house.to_account_info();
@@ -229,7 +229,7 @@ pub fn execute_sale<'a>(
         let pay_to_auction_house_accounts = [
             buyer_escrow.clone(),
             treasury_account.clone(),
-            system_program_info.clone(),
+            system_program.to_account_info(),
         ];
         invoke_signed(
             &pay_to_auction_house_instruction,
@@ -283,7 +283,7 @@ pub fn execute_sale<'a>(
                     let pay_to_creator_accounts = [
                         buyer_escrow.clone(),
                         creator_info.clone(),
-                        system_program_info.clone(),
+                        system_program.to_account_info(),
                     ];
                     invoke_signed(
                         &pay_to_creator_instruction,
@@ -359,7 +359,7 @@ pub fn execute_sale<'a>(
         let pay_to_seller_accounts = [
             buyer_escrow,
             seller_info.clone(),
-            system_program_info.clone(),
+            system_program.to_account_info(),
         ];
         invoke_signed(
             &pay_to_seller_instruction,
@@ -390,6 +390,7 @@ pub fn execute_sale<'a>(
                     token_program.to_account_info(),
                     seller_receipt_info.to_account_info(),
                     associated_token_program.to_account_info(),
+                    system_program.to_account_info(),
                 ],
                 fee_signer_seeds,
             )?;
@@ -426,6 +427,7 @@ pub fn execute_sale<'a>(
 
     // transfer nft to buyer
     let mut transfer_nft_to_buyer_builder = TransferCpiBuilder::new(&bubblegum_program_info);
+    let system_program_info = system_program.to_account_info();
     transfer_nft_to_buyer_builder
         .leaf_owner(&seller_info, false)
         .leaf_delegate(&program_as_signer_info, true)

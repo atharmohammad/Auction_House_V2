@@ -22,12 +22,12 @@ export type AuctionHouseV2 = {
         },
         {
           "name": "treasuryAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "treasuryWithdrawalAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -57,6 +57,11 @@ export type AuctionHouseV2 = {
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
           "isMut": false,
           "isSigner": false
         }
@@ -359,6 +364,11 @@ export type AuctionHouseV2 = {
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -870,12 +880,12 @@ export const IDL: AuctionHouseV2 = {
         },
         {
           "name": "treasuryAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "treasuryWithdrawalAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -905,6 +915,11 @@ export const IDL: AuctionHouseV2 = {
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
           "isMut": false,
           "isSigner": false
         }
@@ -1207,6 +1222,11 @@ export const IDL: AuctionHouseV2 = {
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
           "isMut": false,
           "isSigner": false
         },
