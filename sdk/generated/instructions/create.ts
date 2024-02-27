@@ -41,12 +41,13 @@ export const createStruct = new beet.BeetArgsStruct<
  * @property [_writable_] auctionHouse
  * @property [] authority
  * @property [] treasuryMint
- * @property [] treasuryAccount
- * @property [] treasuryWithdrawalAccount
+ * @property [_writable_] treasuryAccount
+ * @property [_writable_] treasuryWithdrawalAccount
  * @property [] treasuryWithdrawalOwner
  * @property [] feeAccount
  * @property [] feeWithdrawalAccount
  * @property [_writable_, **signer**] payer
+ * @property [] associatedTokenProgram
  * @category Instructions
  * @category Create
  * @category generated
@@ -63,6 +64,7 @@ export type CreateInstructionAccounts = {
   payer: web3.PublicKey
   systemProgram?: web3.PublicKey
   tokenProgram?: web3.PublicKey
+  associatedTokenProgram: web3.PublicKey
   anchorRemainingAccounts?: web3.AccountMeta[]
 }
 
@@ -105,12 +107,12 @@ export function createCreateInstruction(
     },
     {
       pubkey: accounts.treasuryAccount,
-      isWritable: false,
+      isWritable: true,
       isSigner: false,
     },
     {
       pubkey: accounts.treasuryWithdrawalAccount,
-      isWritable: false,
+      isWritable: true,
       isSigner: false,
     },
     {
@@ -140,6 +142,11 @@ export function createCreateInstruction(
     },
     {
       pubkey: accounts.tokenProgram ?? splToken.TOKEN_PROGRAM_ID,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.associatedTokenProgram,
       isWritable: false,
       isSigner: false,
     },

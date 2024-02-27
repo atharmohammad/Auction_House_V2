@@ -58,7 +58,7 @@ export const executeSaleStruct = new beet.FixableBeetArgsStruct<
  * @property [] treeConfig
  * @property [_writable_] seller
  * @property [_writable_] sellerReceiptAccount
- * @property [_writable_] merkeTree
+ * @property [_writable_] merkleTree
  * @property [_writable_] sellerTradeState
  * @property [_writable_] buyer
  * @property [_writable_] buyerEscrow
@@ -68,6 +68,7 @@ export const executeSaleStruct = new beet.FixableBeetArgsStruct<
  * @property [] programAsSigner
  * @property [] bubblegumProgram
  * @property [] compressionProgram
+ * @property [] associatedTokenProgram
  * @property [] logWrapper
  * @category Instructions
  * @category ExecuteSale
@@ -81,7 +82,7 @@ export type ExecuteSaleInstructionAccounts = {
   treeConfig: web3.PublicKey
   seller: web3.PublicKey
   sellerReceiptAccount: web3.PublicKey
-  merkeTree: web3.PublicKey
+  merkleTree: web3.PublicKey
   sellerTradeState: web3.PublicKey
   buyer: web3.PublicKey
   buyerEscrow: web3.PublicKey
@@ -93,6 +94,7 @@ export type ExecuteSaleInstructionAccounts = {
   compressionProgram: web3.PublicKey
   systemProgram?: web3.PublicKey
   tokenProgram?: web3.PublicKey
+  associatedTokenProgram: web3.PublicKey
   logWrapper: web3.PublicKey
   anchorRemainingAccounts?: web3.AccountMeta[]
 }
@@ -157,7 +159,7 @@ export function createExecuteSaleInstruction(
       isSigner: false,
     },
     {
-      pubkey: accounts.merkeTree,
+      pubkey: accounts.merkleTree,
       isWritable: true,
       isSigner: false,
     },
@@ -213,6 +215,11 @@ export function createExecuteSaleInstruction(
     },
     {
       pubkey: accounts.tokenProgram ?? splToken.TOKEN_PROGRAM_ID,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.associatedTokenProgram,
       isWritable: false,
       isSigner: false,
     },

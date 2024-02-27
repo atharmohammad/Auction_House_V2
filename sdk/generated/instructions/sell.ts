@@ -50,7 +50,7 @@ export const sellStruct = new beet.BeetArgsStruct<
  * @property [] treasuryMint
  * @property [] treeConfig
  * @property [_writable_, **signer**] owner
- * @property [_writable_] merkeTree
+ * @property [_writable_] merkleTree
  * @property [] previousLeafDelegate
  * @property [_writable_] sellerTradeState
  * @property [] assetId
@@ -69,7 +69,7 @@ export type SellInstructionAccounts = {
   treasuryMint: web3.PublicKey
   treeConfig: web3.PublicKey
   owner: web3.PublicKey
-  merkeTree: web3.PublicKey
+  merkleTree: web3.PublicKey
   previousLeafDelegate: web3.PublicKey
   sellerTradeState: web3.PublicKey
   assetId: web3.PublicKey
@@ -132,7 +132,7 @@ export function createSellInstruction(
       isSigner: true,
     },
     {
-      pubkey: accounts.merkeTree,
+      pubkey: accounts.merkleTree,
       isWritable: true,
       isSigner: false,
     },
