@@ -1,10 +1,10 @@
 {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "programVersion": "1.0.0",
     "name": "auction-house-v2",
     "description": "SDK for Auction House V2",
     "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "types": "dist/index.d.ts",
     "scripts": {
         "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
         "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
