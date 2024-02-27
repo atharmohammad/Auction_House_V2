@@ -45,7 +45,7 @@ pub struct CancelRemainingAccounts<'info> {
 
     /// CHECK: mutated in downstream program
     #[account(mut)]
-    pub merke_tree: UncheckedAccount<'info>,
+    pub merkle_tree: UncheckedAccount<'info>,
 
     /// CHECK: Verified in CPI
     pub tree_config: UncheckedAccount<'info>,

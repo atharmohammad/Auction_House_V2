@@ -38,7 +38,7 @@ pub struct ExecuteSaleInstruction<'info> {
 
     /// CHECK: mutated in downstream program
     #[account(mut)]
-    pub merke_tree: UncheckedAccount<'info>,
+    pub merkle_tree: UncheckedAccount<'info>,
 
     /// CHECK: Account seeds checked in constraints
     #[account(
@@ -119,7 +119,7 @@ pub fn execute_sale<'a>(
     let auction_house = &ctx.accounts.auction_house;
     let auction_house_fee_account = &ctx.accounts.auction_house_fee_account.to_account_info();
     let auction_house_authority = &ctx.accounts.auction_house_authority;
-    let merkle_tree_info = &ctx.accounts.merke_tree.to_account_info();
+    let merkle_tree_info = &ctx.accounts.merkle_tree.to_account_info();
     let seller_info = ctx.accounts.seller.to_account_info();
     let buyer_info = ctx.accounts.buyer.to_account_info();
     let treasury_account = &ctx.accounts.treasury_account.to_account_info();

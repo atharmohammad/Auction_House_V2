@@ -29,7 +29,7 @@ pub struct SellInstruction<'info> {
 
     /// CHECK: mutated in downstream program
     #[account(mut)]
-    pub merke_tree: UncheckedAccount<'info>,
+    pub merkle_tree: UncheckedAccount<'info>,
 
     /// CHECK: Verified in CPI
     pub previous_leaf_delegate: UncheckedAccount<'info>,
@@ -83,7 +83,7 @@ pub fn sell<'b, 'a>(
 ) -> Result<()> {
     let auction_house = &ctx.accounts.auction_house.to_account_info();
     let asset_id = &ctx.accounts.asset_id.to_account_info();
-    let merkle_tree = &ctx.accounts.merke_tree.to_account_info();
+    let merkle_tree = &ctx.accounts.merkle_tree.to_account_info();
     let owner = &ctx.accounts.owner.to_account_info();
     let previous_leaf_delegate = &ctx.accounts.previous_leaf_delegate.to_account_info();
     let seller_trade_state_info = &ctx.accounts.seller_trade_state.to_account_info();
