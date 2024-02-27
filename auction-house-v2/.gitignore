@@ -7,4 +7,3 @@ test-ledger
 .yarn
 *.env
 payer.json
-js-tests
