@@ -10,8 +10,33 @@
 - Cancel bid or sell orders
 - Supports multiple currencies
 
+## How to Use
+To integrate in your application, simply install the sdk 
+```
+npm install auction-house-v2
+```
+To build and test program:
+
+- Install anchor
+
+- Add (Devnet)RPC URL and wallet path in ``Anchor.toml``
+
+```
+[provider]
+cluster = "<RPC_URL>"
+wallet = "<WALLET_PATH>"
+```
+
+```
+cd auction-house-v2
+anchor build
+anchor deploy
+anchor run test
+```
+
 ## ⛳ Milestones
-- Build a Secure, reviewed and an audited contract with listed features
+- Build a high level wrapper on current sdk
+- Fully tested and audited program with an sdk
 - Support timed auctions
 - Build on feature requests from ecosystem
 
